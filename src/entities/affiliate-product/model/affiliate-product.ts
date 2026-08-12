@@ -54,6 +54,14 @@ function isNullableNumber(value: unknown): value is number | null {
   return typeof value === "number" || value === null;
 }
 
+function isClassificationReviewStatus(value: unknown): value is ClassificationReviewStatus | null {
+  return value === null || (typeof value === "string" && classificationReviewStatuses.includes(value as ClassificationReviewStatus));
+}
+
+function isNullableConfidence(value: unknown): value is number | null {
+  return value === null || (typeof value === "number" && value >= 0 && value <= 1);
+}
+
 function isAffiliateMarketplace(value: unknown): value is AffiliateMarketplace {
   return typeof value === "string" && affiliateMarketplaces.includes(value as AffiliateMarketplace);
 }
@@ -90,7 +98,10 @@ export function isPublishableAffiliateProduct(value: unknown): value is Publisha
 
   if (
     !hasValidNullableNumberField(value, "priceOriginalCents") ||
-    !hasValidNullableNumberField(value, "priceDiscountCents")
+    !hasValidNullableNumberField(value, "priceDiscountCents") ||
+    !isNullableString(value.classificationSource) ||
+    !isNullableConfidence(value.classificationConfidence) ||
+    !isClassificationReviewStatus(value.classificationReviewStatus)
   ) {
     return false;
   }

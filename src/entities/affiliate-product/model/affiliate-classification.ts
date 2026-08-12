@@ -42,6 +42,7 @@ export type LegacyAffiliateProductClassification = {
   readonly leafSlug: LeafSlug | null;
   readonly classificationSource: LegacyBackfillClassificationSource;
   readonly classificationConfidence: number;
+  readonly classificationReviewStatus: LegacyClassificationStatus;
   readonly reasons: readonly LegacyClassificationReason[];
 };
 
@@ -213,6 +214,7 @@ function buildReviewResult(reasons: readonly LegacyClassificationReason[]): Lega
     leafSlug: null,
     classificationSource: legacyBackfillClassificationSource,
     classificationConfidence: 0.4,
+    classificationReviewStatus: "review",
     reasons,
   };
 }
@@ -227,6 +229,7 @@ function buildAutoResult(score: LeafScore, reasons: readonly LegacyClassificatio
     leafSlug: leaf.slug,
     classificationSource: legacyBackfillClassificationSource,
     classificationConfidence: getConfidence(score, "auto"),
+    classificationReviewStatus: "auto",
     reasons,
   };
 }

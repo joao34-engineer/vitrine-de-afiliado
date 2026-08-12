@@ -52,4 +52,20 @@ describe("affiliate product contract", () => {
       }),
     ).toBe(false);
   });
+
+  it("rejects classification metadata that the database constraints would reject", () => {
+    expect(
+      isPublishableAffiliateProduct({
+        ...baseProduct,
+        classificationReviewStatus: "pending",
+      }),
+    ).toBe(false);
+
+    expect(
+      isPublishableAffiliateProduct({
+        ...baseProduct,
+        classificationConfidence: 1.2,
+      }),
+    ).toBe(false);
+  });
 });

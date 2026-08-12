@@ -28,6 +28,7 @@ describe("legacy affiliate classification", () => {
     );
 
     expect(classification.status).toBe("auto");
+    expect(classification.classificationReviewStatus).toBe("auto");
     expect(classification.departmentSlug).toBe("casa");
     expect(classification.leafSlug).toBe("organizacao");
     expect(classification.reasons).toContain("legacy-category-mismatch");
@@ -124,6 +125,7 @@ describe("legacy affiliate classification", () => {
     );
 
     expect(classification.status).toBe("review");
+    expect(classification.classificationReviewStatus).toBe("review");
     expect(classification.reasons).toContain("ambiguous-leaf-match");
   });
 
@@ -206,5 +208,7 @@ describe("legacy affiliate classification", () => {
     expect(batch.review).toHaveLength(1);
     expect(batch.auto[0]?.product.id).toBe("auto-1");
     expect(batch.review[0]?.product.id).toBe("review-1");
+    expect(batch.auto[0]?.classification.classificationReviewStatus).toBe("auto");
+    expect(batch.review[0]?.classification.classificationReviewStatus).toBe("review");
   });
 });
