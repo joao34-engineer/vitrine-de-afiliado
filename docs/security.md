@@ -37,6 +37,15 @@ Publicos:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
+O backend do monorepo possui responsabilidades separadas: a chave estreita de
+tracking continua exclusiva do `record_click`, enquanto a service role fica em
+um cliente administrativo separado para produtos. A service role ignora RLS e
+por isso nunca deve chegar ao browser, a uma resposta HTTP ou a um modulo
+client.
+
+Produtos com `classification_review_status = 'review'`, inativos ou sem
+`department_slug`/`leaf_slug` completos nao entram na leitura publica.
+
 ## Fora do V1
 
 Pixel e CAPI nao entram nesta etapa. Nao criar env vars Meta ate pedido explicito.

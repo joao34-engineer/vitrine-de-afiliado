@@ -7,6 +7,7 @@ const requiredServerEnvString = z.string().trim().min(1);
 
 export const serverEnvSchema = publicEnvSchema.extend({
   SUPABASE_SERVICE_ROLE_KEY: requiredServerEnvString,
+  SUPABASE_CLICK_KEY: requiredServerEnvString.optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

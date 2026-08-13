@@ -91,6 +91,22 @@ DoD:
 - PDP direciona para redirect rastreado.
 - Footer apresenta disclosure afiliado e nao promete preco garantido.
 
+## Status de execucao da Fase 2
+
+A Fase 2 foi implementada localmente na `affiliate-vitrine`: home, rail e
+sheet local, listagens por departamento/folha, busca full-text, paginacao
+cursor-based, PDP, redirect `record_click` fail-open, footer e estados de
+loading/erro.
+
+A migration de indices e busca continua somente revisavel em
+`supabase/migrations/20260813000000_add_affiliate_catalog_search_and_indexes.sql`.
+O diagnostico `supabase/diagnostics/20260813_catalog_readonly_verification.sql`
+deve ser executado manualmente antes de qualquer aplicacao. Nenhuma migration
+de performance foi aplicada automaticamente.
+
+Pixel e CAPI continuam fora do projeto. O caminho publico nao usa service role
+nem qualquer chave administrativa.
+
 ## Fase 3 - Go-live
 
 Objetivo: preparar a vitrine para producao.

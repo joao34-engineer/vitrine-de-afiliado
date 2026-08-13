@@ -120,8 +120,8 @@ O divider nao deve fazer parte do public API da feature se for detalhe interno.
 
 ## Dependencias
 
-Hoje a `affiliate-vitrine` ainda nao tem `gsap` nem `@gsap/react` no
-`package.json`.
+Hoje a `affiliate-vitrine` possui `gsap` e `@gsap/react` no `package.json`;
+esta fase deve usar essas dependencias somente no divider client-only.
 
 Na fase de implementacao, adicionar de forma explicita:
 
@@ -204,5 +204,5 @@ Criar testes equivalentes aos do `my-collection-page`:
 - Animar o proprio navbar.
 - Criar nova regra de layout para o header.
 - Trocar o comportamento do sheet/dropdown.
-- Instalar GSAP antes da fase de implementacao.
+- Nao usar GSAP fora do divider client-only.
 - Copiar a taxonomia DS/Shopify do `my-collection-page`.

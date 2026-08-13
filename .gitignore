@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local catalog exports and classification reports
+/produtos-csv/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

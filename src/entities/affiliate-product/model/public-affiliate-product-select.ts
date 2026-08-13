@@ -1,0 +1,17 @@
+export const PUBLIC_AFFILIATE_PRODUCT_CATALOG_SELECT = [
+  "id",
+  "product_id_shopee",
+  "title",
+  "price_original",
+  "price_discount",
+  "image_url",
+  "category",
+  "is_active",
+  "created_at",
+  "department_slug",
+  "subcategory_slug",
+  "leaf_slug",
+  "classification_source",
+  "classification_confidence",
+  "classification_review_status",
+].join(",");

@@ -49,3 +49,27 @@ O app segue Next.js App Router com `src/app/` e FSD leve:
 - `npm run lint`
 - `npx tsc --noEmit`
 - `npm run test` quando houver testes relevantes
+
+## Mapa de Documentacao Operacional
+
+Antes de editar, use o documento tematico correspondente:
+
+| Trabalho | Documento principal |
+| --- | --- |
+| Clean code e fronteiras | `docs/coding-standards.md` |
+| TypeScript e contratos | `docs/typescript-best-practices.md` |
+| Next.js, React e Server Components | `docs/react-nextjs-best-practices.md` |
+| Testes e contratos de rota | `docs/testing-standards.md` |
+| Listing, indices, cache e paginacao | `docs/catalog-performance.md` |
+| Supabase, RLS e credenciais | `docs/supabase-guidelines.md` e `docs/supabase-runtime-runbook.md` |
+
+O pre-flight minimo continua sendo, nesta ordem:
+
+1. `../docs/feature-first-posture.md`
+2. `../docs/README.md`
+3. `./AGENTS.md`
+4. `./docs/README.md`
+5. documento tematico da tarefa
+
+Nao copiar regras ou contratos de `my-collection-page`; use aquela base apenas
+como referencia tecnica quando a documentacao local apontar para ela.

@@ -16,8 +16,12 @@ Entrada obrigatoria para LLMs e humanos antes de trabalhar no `affiliate-vitrine
 | --- | --- |
 | Next.js, App Router, Server/Client Components | `react-nextjs-best-practices.md` |
 | TypeScript, tipos, validacao e zero `any` | `typescript-best-practices.md` |
+| Clean code, nomenclatura e fronteiras | `coding-standards.md` |
+| Testes unitarios, contratos e rotas | `testing-standards.md` |
+| Catalogo, indices, cache e paginação | `catalog-performance.md` |
 | Estrutura de pastas e FSD leve | `architecture.md` |
 | Supabase, env vars e RLS | `supabase-guidelines.md` |
+| Runtime Supabase, clients e policy publica | `supabase-runtime-runbook.md` |
 | Seguranca, redirects e segredos | `security.md` |
 | Compliance afiliado, Amazon e footer | `affiliate-compliance-footer.md` |
 | Categorias, departamentos e folhas | `taxonomy-guidelines.md` |
@@ -34,3 +38,15 @@ Entrada obrigatoria para LLMs e humanos antes de trabalhar no `affiliate-vitrine
 - Shopify e taxonomia DS ficam fora deste app.
 - Pixel e CAPI ficam fora do V1.
 - Navegacao por departamento/sheet deve usar taxonomia local e abrir sem fetch.
+
+## Pre-flight por tarefa
+
+| Tarefa | Leitura minima adicional |
+| --- | --- |
+| Catalogo/listing | `architecture.md`, `react-nextjs-best-practices.md`, `catalog-performance.md`, `supabase-runtime-runbook.md` |
+| UI/home/sheet | `architecture.md`, `react-nextjs-best-practices.md`, `coding-standards.md` |
+| Supabase/RLS/migration | `supabase-guidelines.md`, `supabase-runtime-runbook.md`, `catalog-performance.md` |
+| TypeScript/contratos | `typescript-best-practices.md`, `coding-standards.md`, testes relevantes |
+| Testes | `testing-standards.md` e o documento da feature tocada |
+
+O pre-flight nao substitui `../docs/feature-first-posture.md` nem `AGENTS.md`.

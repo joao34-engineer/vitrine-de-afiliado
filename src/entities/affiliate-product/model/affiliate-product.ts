@@ -29,6 +29,7 @@ export type AffiliateProductClassification = {
 export type PublishableAffiliateProduct = AffiliateProductPricing &
   AffiliateProductClassification & {
     readonly id: string;
+    readonly productIdShopee: string;
     readonly slug: string;
     readonly title: string;
     readonly imageUrl: string | null;
@@ -37,6 +38,17 @@ export type PublishableAffiliateProduct = AffiliateProductPricing &
     readonly category: string | null;
     readonly isActive: true;
   };
+
+export type PublicAffiliateProduct = PublishableAffiliateProduct;
+
+export type PublicAffiliateProductCardData = {
+  readonly id: string;
+  readonly title: string;
+  readonly imageUrl: string | null;
+  readonly priceOriginalCents: number | null;
+  readonly priceDiscountCents: number | null;
+  readonly marketplace: AffiliateMarketplace;
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -82,6 +94,7 @@ export function isPublishableAffiliateProduct(value: unknown): value is Publisha
 
   if (
     !isNonEmptyString(value.id) ||
+    !isNonEmptyString(value.productIdShopee) ||
     !isNonEmptyString(value.slug) ||
     !isNonEmptyString(value.title) ||
     !isNonEmptyString(value.affiliateUrl) ||
@@ -109,5 +122,14 @@ export function isPublishableAffiliateProduct(value: unknown): value is Publisha
   return (
     hasValidOptionalSubcategory(value.subcategorySlug) &&
     isDepartmentLeafPair(value.departmentSlug, value.leafSlug)
+  );
+}
+
+export function isPublicAffiliateProduct(value: unknown): value is PublicAffiliateProduct {
+  return (
+    isPublishableAffiliateProduct(value) &&
+    value.classificationReviewStatus === "auto" &&
+    value.departmentSlug !== null &&
+    value.leafSlug !== null
   );
 }

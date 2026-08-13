@@ -8,6 +8,8 @@ export const publicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: requiredPublicEnvString.url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: requiredPublicEnvString,
   NEXT_PUBLIC_SITE_URL: requiredPublicEnvString.url().optional(),
+  NEXT_PUBLIC_INSTAGRAM_URL: requiredPublicEnvString.url().optional(),
+  NEXT_PUBLIC_WHATSAPP_URL: requiredPublicEnvString.url().optional(),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;

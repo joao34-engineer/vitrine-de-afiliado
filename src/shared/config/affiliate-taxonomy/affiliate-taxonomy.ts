@@ -555,6 +555,14 @@ export function listDepartments(): readonly DepartmentDefinition[] {
   return affiliateTaxonomy.departments;
 }
 
+export function findDepartmentBySlug(value: unknown): DepartmentDefinition | null {
+  if (!isDepartmentSlug(value)) {
+    return null;
+  }
+
+  return affiliateTaxonomy.departments.find((department) => department.slug === value) ?? null;
+}
+
 export function listSubcategories(): readonly SubcategoryDefinition[] {
   return affiliateTaxonomy.subcategories;
 }

@@ -3,6 +3,7 @@ export {
   affiliateLeafSlugs,
   affiliateSubcategorySlugs,
   affiliateTaxonomy,
+  findDepartmentBySlug,
   findLeafBySlug,
   getLeafBySlug,
   isDepartmentLeafPair,

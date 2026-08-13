@@ -72,3 +72,25 @@ Cada resultado retorna:
 - Produtos so ficam prontos para publicacao futura quando tiverem
   `departmentSlug` e `leafSlug` validos.
 
+## Scripts locais
+
+Os scripts operacionais sao TypeScript com ESM e usam Node.js 24 LTS. Eles
+geram apenas arquivos locais revisaveis e nao executam migration nem conectam
+ao Supabase.
+
+Para consolidar a classificacao aprovada:
+
+```text
+npm.cmd run classify:consolidate
+```
+
+Para gerar o arquivo SQL revisavel do backfill:
+
+```text
+npm.cmd run classify:backfill
+```
+
+O runtime esperado e Node.js `24.19.0` ou outra versao `24.x` compativel,
+registrado em `.nvmrc` e no campo `engines` do `package.json`. Node.js 26
+continua classificado como Current, portanto nao e o runtime de producao
+adotado nesta fase.

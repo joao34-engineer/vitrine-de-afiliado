@@ -4,6 +4,7 @@ import { isPublishableAffiliateProduct, type PublishableAffiliateProduct } from 
 
 const baseProduct = {
   id: "product-1",
+  productIdShopee: "123.456",
   slug: "fone-bluetooth",
   title: "Fone bluetooth",
   imageUrl: "https://example.com/fone.jpg",
