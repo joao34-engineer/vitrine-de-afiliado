@@ -13,6 +13,7 @@ export {
 export {
   listPublicAffiliateProductPages,
 } from "./api/list-public-affiliate-product-pages";
+export { listRelatedPublicAffiliateProducts } from "./api/list-related-public-affiliate-products";
 export {
   getCachedPublicAffiliateProductById,
   getPublicAffiliateProductById,

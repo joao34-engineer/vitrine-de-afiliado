@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
@@ -9,6 +9,17 @@ vi.mock("./department-rail-divider", () => ({
 }));
 
 import { DepartmentRail } from "./department-rail";
+import { DepartmentNavigationProvider } from "./department-navigation-context";
+import { DepartmentSheet } from "./department-sheet";
+
+function renderNavigation(): void {
+  render(
+    <DepartmentNavigationProvider>
+      <DepartmentRail />
+      <DepartmentSheet />
+    </DepartmentNavigationProvider>,
+  );
+}
 
 describe("department rail sheet", () => {
   afterEach(() => {
@@ -19,7 +30,7 @@ describe("department rail sheet", () => {
     const background = document.createElement("main");
     background.dataset.sheetBackground = "true";
     document.body.append(background);
-    render(<DepartmentRail />);
+    renderNavigation();
     const trigger = screen.getByRole("button", { name: "Homens" });
 
     fireEvent.click(trigger);
@@ -27,8 +38,8 @@ describe("department rail sheet", () => {
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Fechar menu" }));
     expect(document.querySelector("main")?.getAttribute("aria-hidden")).toBe("true");
     expect((document.querySelector("main") as HTMLElement).inert).toBe(true);
-    expect(document.querySelector(".department-rail-wrap [data-sheet-background]")?.getAttribute("aria-hidden")).toBe("true");
-    expect((document.querySelector(".department-rail-wrap [data-sheet-background]") as HTMLElement).inert).toBe(true);
+    expect(document.querySelector(".department-rail-wrap")?.getAttribute("aria-hidden")).toBe("true");
+    expect((document.querySelector(".department-rail-wrap") as HTMLElement).inert).toBe(true);
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -36,11 +47,11 @@ describe("department rail sheet", () => {
   });
 
   it("wraps Tab navigation inside the sheet", () => {
-    render(<DepartmentRail />);
+    renderNavigation();
     fireEvent.click(screen.getByRole("button", { name: "Homens" }));
 
     const closeButton = screen.getByRole("button", { name: "Fechar menu" });
-    const links = screen.getAllByRole("link");
+    const links = within(screen.getByRole("dialog")).getAllByRole("link");
     const lastLink = links[links.length - 1];
     lastLink?.focus();
     fireEvent.keyDown(document, { key: "Tab" });
@@ -52,7 +63,7 @@ describe("department rail sheet", () => {
   });
 
   it("keeps home as a direct link", () => {
-    render(<DepartmentRail />);
+    renderNavigation();
     expect(screen.getByRole("link", { name: "Home" }).getAttribute("href")).toBe("/");
   });
 });

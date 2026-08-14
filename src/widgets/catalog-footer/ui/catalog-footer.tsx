@@ -20,12 +20,14 @@ export function CatalogFooter(): React.JSX.Element {
         </div>
         <div>
           <p className="footer-heading">Comunidade</p>
-          {env.NEXT_PUBLIC_INSTAGRAM_URL ? (
-            <a href={env.NEXT_PUBLIC_INSTAGRAM_URL} rel="noreferrer" target="_blank">Instagram</a>
-          ) : null}
-          {env.NEXT_PUBLIC_WHATSAPP_URL ? (
-            <a href={env.NEXT_PUBLIC_WHATSAPP_URL} rel="noreferrer" target="_blank">WhatsApp</a>
-          ) : null}
+          <div className="footer-community-links">
+            {env.NEXT_PUBLIC_INSTAGRAM_URL ? (
+              <a href={env.NEXT_PUBLIC_INSTAGRAM_URL} rel="noreferrer" target="_blank">Instagram</a>
+            ) : null}
+            {env.NEXT_PUBLIC_WHATSAPP_URL ? (
+              <a href={env.NEXT_PUBLIC_WHATSAPP_URL} rel="noreferrer" target="_blank">WhatsApp</a>
+            ) : null}
+          </div>
         </div>
         <div className="footer-disclosure">
           <p className="footer-heading">Transparencia afiliada</p>

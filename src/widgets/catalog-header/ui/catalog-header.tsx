@@ -1,19 +1,21 @@
+import Image from "next/image";
 import Link from "next/link";
 
-import { DepartmentRail } from "@/features/department-navigation";
+import { DepartmentMenuButton, DepartmentRail } from "@/features/department-navigation";
 
-export function CatalogHeader(): React.JSX.Element {
+export function CatalogHeader({ mobileSearch = "header" }: Readonly<{ mobileSearch?: "header" | "listing" | "hidden" }>): React.JSX.Element {
   return (
-    <header className="site-header">
-      <div className="header-inner" data-sheet-background>
+    <header className="site-header" data-sheet-background>
+      <div className="header-inner">
         <Link className="brand-lockup" href="/" aria-label="Salvat Ofertas, inicio">
-          <span className="brand-mark" aria-hidden="true">S</span>
+          <span className="brand-mark"><Image src="/brand/salvat-brand-seal.jpeg" alt="" width={40} height={40} priority /></span>
           <span>
             <span className="brand-name">salvat&amp;brand</span>
             <span className="brand-subtitle">ofertas escolhidas</span>
           </span>
         </Link>
-        <form className="search-form" action="/buscar" method="get" role="search">
+        <DepartmentMenuButton />
+        <form className={`search-form header-search-form ${mobileSearch !== "header" ? "mobile-search-hidden" : ""}`.trim()} action="/buscar" method="get" role="search">
           <label className="sr-only" htmlFor="catalog-search">Buscar produtos</label>
           <input
             id="catalog-search"

@@ -17,5 +17,5 @@ export default async function DepartmentPage({ params, searchParams }: { params:
   const page = await listPublicAffiliateProductPages({ departmentSlug, pageNumber: paramsForPage.pagina, startingCursor: paramsForPage.cursor });
   const nextHref = page.hasNextPage ? createCatalogPaginationHref({ pathname: `/departamento/${departmentSlug}`, pageNumber: page.pageNumber < 10 ? page.pageNumber + 1 : 1, startingCursor: page.pageNumber < 10 ? page.startingCursor : page.nextCursor }) : null;
   const previousHref = page.pageNumber > 1 ? createCatalogPaginationHref({ pathname: `/departamento/${departmentSlug}`, pageNumber: page.pageNumber - 1, startingCursor: page.startingCursor }) : null;
-  return <CatalogShell><CatalogListing eyebrow="Departamento" title={department.label} description={department.description} products={page.items} nextHref={nextHref} nextLabel={page.pageNumber === 10 ? "Proxima janela" : undefined} previousHref={previousHref} /></CatalogShell>;
+  return <CatalogShell mobileSearch="listing"><CatalogListing eyebrow="Departamento" title={department.label} description={department.description} products={page.items} nextHref={nextHref} nextLabel={page.pageNumber === 10 ? "Proxima janela" : undefined} previousHref={previousHref} departmentSlug={department.slug} /></CatalogShell>;
 }

@@ -15,10 +15,8 @@ export function ScrollRevealHairline({ className }: Readonly<{ className: string
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reducedMotion) {
-      const update = () => gsap.set(line, { autoAlpha: window.scrollY > 0 ? 1 : 0, scaleX: 1 });
-      update();
-      window.addEventListener("scroll", update, { passive: true });
-      return () => window.removeEventListener("scroll", update);
+      gsap.set(line, { autoAlpha: 1, scaleX: 1 });
+      return;
     }
 
     gsap.set(line, { autoAlpha: 0, scaleX: 0.92, transformOrigin: "50% 50%" });

@@ -8,13 +8,16 @@ import {
 } from "../model/affiliate-product-presentation";
 import type { PublicAffiliateProductCardData } from "../model/affiliate-product";
 
-export function AffiliateProductCard({ product }: Readonly<{ product: PublicAffiliateProductCardData }>): React.JSX.Element {
+export function AffiliateProductCard({ product, variant = "default" }: Readonly<{
+  product: PublicAffiliateProductCardData;
+  variant?: "default" | "hero";
+}>): React.JSX.Element {
   const price = formatAffiliatePrice(product.priceDiscountCents);
   const originalPrice = formatAffiliatePrice(product.priceOriginalCents);
   const discount = getAffiliateDiscountPercent(product);
 
   return (
-    <article className="product-card">
+    <article className={`product-card ${variant === "hero" ? "product-card-hero" : ""}`.trim()}>
       <Link href={`/p/${product.id}`} className="product-image-link" aria-label={`Abrir ${product.title}`}>
         <div className="product-image-frame">
           {product.imageUrl ? <Image src={product.imageUrl} alt="" fill sizes="(max-width: 640px) 50vw, (max-width: 1100px) 25vw, 240px" className="product-image" /> : <div className="product-image-placeholder" aria-hidden="true">Sem imagem</div>}

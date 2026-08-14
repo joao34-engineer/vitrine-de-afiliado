@@ -37,7 +37,8 @@ Padrao atual:
 - A animacao usa `gsap` + `ScrollTrigger`.
 - No topo, a linha inicia escondida.
 - O reveal completa por volta de `140px` de scroll.
-- Em `prefers-reduced-motion: reduce`, a linha fica em estado estatico.
+- Em `prefers-reduced-motion: reduce`, a linha fica visivel e estatica, sem
+  listener de scroll ou scrub.
 
 ## Contrato visual
 
@@ -47,7 +48,7 @@ Padrao atual:
 | --- | --- |
 | `dept rail bg` | mesma cor do background/chrome da pagina |
 | hairline | token claro de borda, visivel mas discreto |
-| estado no topo | invisivel |
+| estado no topo | invisivel com motion normal; visivel e estatica em reduced motion |
 | estado com scroll | `opacity: 1`, `scaleX: 1` |
 
 ### Dark mode
@@ -56,7 +57,7 @@ Padrao atual:
 | --- | --- |
 | `dept rail bg` | mesma cor do background/chrome dark |
 | hairline | token dark proprio, com contraste suficiente |
-| estado no topo | invisivel |
+| estado no topo | invisivel com motion normal; visivel e estatica em reduced motion |
 | estado com scroll | visivel sem parecer linha light colada no dark |
 
 Token sugerido para dark: um tom proximo de `#35302A` ou o border dark vigente
