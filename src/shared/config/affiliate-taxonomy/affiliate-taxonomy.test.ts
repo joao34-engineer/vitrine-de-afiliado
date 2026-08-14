@@ -52,4 +52,8 @@ describe("affiliate taxonomy", () => {
     expect(isDepartmentLeafPair("casa", "audio")).toBe(false);
     expect(isDepartmentLeafPair("tech", "unknown")).toBe(false);
   });
+
+  it("keeps the child leaf label distinct from the Infantil department", () => {
+    expect(getLeafBySlug("infantil").label).toBe("Crianças");
+  });
 });

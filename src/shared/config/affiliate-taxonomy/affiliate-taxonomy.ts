@@ -298,7 +298,7 @@ export const affiliateTaxonomy = {
     },
     {
       slug: "infantil",
-      label: "Infantil",
+      label: "Crianças",
       description: "Produtos para criancas quando nao forem especificamente bebe.",
       departmentSlug: "infantil",
       subcategorySlug: "roupas",
