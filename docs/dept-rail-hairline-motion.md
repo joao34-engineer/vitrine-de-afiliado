@@ -153,7 +153,7 @@ html.dark {
 }
 ```
 
-Se o dark ficar fraco demais, usar um token dedicado:
+O tema Dark usa o token dedicado do par Dark do Figma:
 
 ```css
 html.dark {

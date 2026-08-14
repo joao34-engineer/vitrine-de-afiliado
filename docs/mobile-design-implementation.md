@@ -31,7 +31,7 @@ quebrados. A referencia visual desktop fica para uma etapa posterior.
 | Footer e disclosure | `widgets/catalog-footer` |
 | Hairline do rail | `shared/ui/scroll-reveal-hairline.tsx` e `department-rail-divider.tsx` |
 
-## Tokens Mobile
+## Tokens Mobile e Tema Manual
 
 Light usa fundo `#fbf8f3`, superficies `#ffffff` e `#f6efe4`, texto
 `#191a17`, texto secundario `#68645b`, borda `#ddd2c4`, destaque `#d4548e`,
@@ -41,8 +41,16 @@ Dark usa fundo `#121411`, superficies `#1c1e1a` e `#11100e`, texto
 `#f7f1e8`, texto secundario `#b7aea1`, borda `#3a3c34`, destaque `#ff8b5d`,
 preco `#ff9a88` e divisor `#35302a`.
 
-Os tokens sao aplicados apenas no breakpoint mobile nesta etapa. O desktop
-continua com o chrome existente.
+O tema e controlado manualmente pelo toggle ao lado do menu no header. O
+estado inicial e Light, o valor escolhido fica em `localStorage` com a chave
+`salvat-theme`, e o boot script evita uma troca visual tardia. A preferencia do
+sistema nao participa da decisao. O par de icones local esta em
+`public/icons/theme-moon.svg` e `public/icons/theme-sun.svg`, seguindo a
+referencia do toggle do `my-collection-page`.
+
+Os tokens Light do frame mobile continuam aplicados no breakpoint mobile. O
+tema Dark usa os tokens do par Dark do Figma atraves de `html.dark`, sem
+`prefers-color-scheme` e sem alterar consultas, rotas ou contratos de produto.
 
 ## Navegacao
 

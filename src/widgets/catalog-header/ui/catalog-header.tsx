@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { DepartmentMenuButton, DepartmentRail } from "@/features/department-navigation";
+import { ThemeToggle } from "@/features/theme-toggle";
 
 export function CatalogHeader({ mobileSearch = "header", mobileRail = "header" }: Readonly<{
   mobileSearch?: "header" | "listing" | "hidden";
@@ -17,7 +18,6 @@ export function CatalogHeader({ mobileSearch = "header", mobileRail = "header" }
             <span className="brand-subtitle">achados selecionados</span>
           </span>
         </Link>
-        <DepartmentMenuButton />
         <form className={`search-form header-search-form ${mobileSearch !== "header" ? "mobile-search-hidden" : ""}`.trim()} action="/buscar" method="get" role="search">
           <label className="sr-only" htmlFor="catalog-search">Buscar produtos</label>
           <input
@@ -31,6 +31,10 @@ export function CatalogHeader({ mobileSearch = "header", mobileRail = "header" }
             Buscar
           </button>
         </form>
+        <div className="header-actions">
+          <ThemeToggle />
+          <DepartmentMenuButton />
+        </div>
       </div>
       <DepartmentRail className={`header-department-rail mobile-rail-${mobileRail}`.trim()} />
     </header>
