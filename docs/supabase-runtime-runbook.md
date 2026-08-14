@@ -15,13 +15,39 @@ fronteira privilegiada separada e devem ser auditadas no diagnostico.
 | --- | --- | --- |
 | `affiliate-vitrine` leitura server-only | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Ler produtos liberados pela RLS |
 | `affiliate-vitrine` redirect server-only | `SUPABASE_CLICK_KEY` | Somente RPC `record_click` com origem `vitrine` |
-| `affiliate-vitrine` server-only | `SUPABASE_SERVICE_ROLE_KEY` | Reservada a operacoes administrativas futuras; nao usada no catalogo |
+| `affiliate-vitrine` server-only | `SUPABASE_SERVICE_ROLE_KEY` | Somente ingestao/review administrativas; nunca leitura publica |
 | `AFILIADO-SHOPEE/backend` tracking | `SUPABASE_CLICK_KEY` | Somente RPC `record_click` |
-| `AFILIADO-SHOPEE/backend` produtos | `SUPABASE_SERVICE_ROLE_KEY` | Ler candidatos e atualizar classificacao |
+| `AFILIADO-SHOPEE/backend` produtos | `AFFILIATE_VITRINE_INTERNAL_SECRET` | Orquestrar a API M2M; nao acessa Supabase |
+
+O contrato M2M entre backend e vitrine usa `AFFILIATE_VITRINE_INTERNAL_URL` no
+backend e `AFFILIATE_VITRINE_INTERNAL_SECRET` em ambos os servidores. Esse
+segredo nao e a chave do Supabase e nunca e enviado ao navegador. A migration
+administrativa de ingestao/review ainda deve ser aplicada manualmente antes de
+usar os endpoints em ambiente real.
 
 O cliente de tracking nao deve receber permissao de produtos nem fazer
 fallback para service role. A service role ignora RLS e nunca pode aparecer no
 browser, em logs ou em respostas HTTP.
+
+### Diagnostico de indisponibilidade M2M
+
+`GET /json/version` nao e uma rota da aplicacao; e uma sondagem externa de
+DevTools/browser automation e pode responder `404` sem indicar falha da API.
+Um `502` em `/api/affiliate-vitrine/taxonomy` ou `/reviews` indica que o
+backend nao conseguiu completar a chamada para a vitrine. Verifique, sem
+exibir os valores, se ambos os processos possuem:
+
+- `backend/.env`: `AFFILIATE_VITRINE_INTERNAL_URL` e
+  `AFFILIATE_VITRINE_INTERNAL_SECRET`;
+- `affiliate-vitrine/.env.local`/Vercel: o mesmo
+  `AFFILIATE_VITRINE_INTERNAL_SECRET`;
+- URL HTTPS fora de `localhost`/`127.0.0.1` exatos;
+- Uvicorn, Next e Vite reiniciados depois da alteracao.
+
+Segredo ausente ou URL insegura resulta em `503` de configuracao; falha de
+gateway durante uma chamada resulta em `502`. A migration administrativa
+pendente tambem pode deixar a fila de reviews indisponivel, mas nao deve
+afetar o endpoint local de taxonomia.
 
 ## Regra de leitura publica
 
@@ -48,14 +74,15 @@ do banco.
 
 ## Revisao da migration
 
-Arquivo canonico pendente: `supabase/migrations/20260813000000_add_affiliate_catalog_search_and_public_access.sql`.
+Arquivo canonico ja aplicado: `supabase/migrations/20260813000000_add_affiliate_catalog_search_and_public_access.sql`.
 
 Antes de aplicar:
 
 1. Confirmar que a tabela e as colunas da Fase 1A existem.
 2. Consultar `pg_policies` para confirmar a policy publica atual.
 3. Confirmar que nao existe outra policy de `SELECT` em `public.products`.
-4. Confirmar que o backend usa service role para operacoes administrativas.
+4. Confirmar que a leitura publica usa anon e que operacoes administrativas ficam
+   server-only com service role.
 5. Testar anon com um produto `auto` e um produto `review`.
 6. Confirmar que nenhum produto foi atualizado ou apagado pelo script.
 
@@ -66,14 +93,20 @@ O script tambem falha quando encontra outra policy de `SELECT` em
 `public.products`.
 
 A migration da Fase 1C foi aplicada manualmente e validada no Supabase. A
-migration de catalogo desta fase foi aplicada manualmente apos o diagnostico
-pre-migration e autorizacao explicita. O diagnostico pos-migration confirmou a
-coluna gerada, os quatro indices, as tres RPCs, os grants e a preservacao dos
-157 produtos.
+migration de catalogo desta fase tambem foi aplicada manualmente apos o
+diagnostico pre-migration e autorizacao explicita. O diagnostico pos-migration
+confirmou a coluna gerada, os quatro indices, as tres RPCs, os grants e a
+preservacao dos 157 produtos.
 
-## Operacoes administrativas
+## Operacoes administrativas - eixo de ingestao e review
 
-O cliente Python dedicado aceita somente atualizacoes de:
+O fluxo novo usa a API interna server-only da vitrine. O backend orquestra e o
+console chama apenas endpoints autenticados do backend; o navegador nunca
+recebe service role, anon key administrativa ou click key.
+
+O cliente administrativo da vitrine usa service role somente no servidor. O
+upsert tipado pode atualizar os campos brutos recebidos e a classificacao
+calculada; a revisao humana aceita somente atualizacoes de:
 
 - `department_slug`;
 - `subcategory_slug`;
@@ -82,9 +115,30 @@ O cliente Python dedicado aceita somente atualizacoes de:
 - `classification_confidence`;
 - `classification_review_status`.
 
-Nao existe rota, job ou backfill conectado nesta fase. Erros de leitura ou
-escrita falham explicitamente para que nenhuma classificacao seja considerada
-salva sem confirmacao do Supabase.
+`POST /api/internal/catalog/products` recebe somente produto bruto e roda o
+classificador `ingest-rules-v1`. `auto` publica quando a taxonomia e completa;
+`review` preserva sugestao, motivos e revisao, mas permanece fora do catalogo.
+`GET /api/internal/catalog/reviews` e os endpoints de approve/deactivate usam
+cursor keyset e compare-and-swap por `classification_revision`. Cada aprovacao
+ou desativacao tambem leva `operation_id`: o mesmo UUID pode ser repetido com
+seguranca apos timeout; uma operacao diferente sobre uma revisao ja alterada
+recebe conflito `409`. A reingestao limpa o identificador anterior quando
+altera dados ou classificacao.
+
+A allowlist oficial de links Shopee e HTTPS-only e aceita `shopee.com.br` e
+seus subdominios, `shopee.com` e seus subdominios, alem de `shope.ee`,
+`shp.ee` e `br.shp.ee`. Hosts parecidos, portas, credenciais e HTTP sao
+rejeitados em cada fronteira.
+
+Erros de leitura ou escrita falham explicitamente. A migration aditiva
+`supabase/migrations/20260814000000_add_affiliate_ingestion_review_operations.sql`
+ainda e pendente de aplicacao manual; ela adiciona os campos administrativos,
+o indice da fila e as RPCs service-role-only. Nao executar DDL pelo app.
+Depois dela, a migration revisavel
+`supabase/migrations/20260814010000_align_affiliate_destination_allowlist.sql`
+alinha a RPC de detalhe com a allowlist HTTPS oficial e remove a permissao
+historica para hosts sem evidencia operacional. As duas devem ser revisadas e
+aplicadas em ordem, manualmente e somente com autorizacao explicita.
 
 ## Camada de leitura publica - Fase 2
 
@@ -130,7 +184,9 @@ nem enviado para os cards.
 
 As consultas publicas usam Cache Components com `stale = 60`, `revalidate =
 300` e `expire = 900`, alem de tags por catalogo, departamento, folha, busca e
-produto. A invalidacao de tags fica reservada ao futuro fluxo administrativo.
+produto. A invalidacao de tags ocorre somente depois de escrita administrativa
+confirmada; falha nessa etapa retorna erro temporario para permitir retry
+idempotente.
 
 O redirect `/r/[productId]` consulta o mesmo contrato publico, responde `302`
 com `Cache-Control: no-store` e registra somente `record_click` com a chave

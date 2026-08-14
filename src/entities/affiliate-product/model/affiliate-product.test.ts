@@ -8,7 +8,7 @@ const baseProduct = {
   slug: "fone-bluetooth",
   title: "Fone bluetooth",
   imageUrl: "https://cf.shopee.com.br/file/fone.jpg",
-  affiliateUrl: "https://example.com/oferta",
+  affiliateUrl: "https://shopee.com.br/oferta/123",
   marketplace: "shopee",
   category: "Categoria legada livre",
   isActive: true,

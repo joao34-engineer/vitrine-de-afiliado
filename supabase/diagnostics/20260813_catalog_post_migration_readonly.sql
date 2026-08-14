@@ -220,5 +220,5 @@ select
   count(*) as total_products,
   count(*) filter (where is_active = true and classification_review_status = 'auto') as public_candidates,
   count(*) filter (where image_url is null or image_url !~* '^https://cf\.shopee\.com\.br(?:/|$)') as invalid_public_image_hosts,
-  count(*) filter (where shopee_affiliate_link is null or lower(shopee_affiliate_link) !~ '^https://([a-z0-9-]+\.)*(shopee\.com\.br|shopee\.com|shopee\.ee|shp\.ee|shopeesz\.com)(?:/|$)') as invalid_public_affiliate_hosts
+  count(*) filter (where shopee_affiliate_link is null or lower(shopee_affiliate_link) !~ '^https://([a-z0-9-]+\.)*(shopee\.com\.br|shopee\.com|shopee\.ee|shp\.ee|br\.shp\.ee)([/?#]|$)') as invalid_public_affiliate_hosts
 from public.products;

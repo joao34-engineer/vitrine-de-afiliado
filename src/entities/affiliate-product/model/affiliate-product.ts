@@ -1,4 +1,7 @@
 import {
+  isAllowedAffiliateDestination,
+} from "./affiliate-destination";
+import {
   isDepartmentLeafPair,
   isSubcategorySlug,
   type DepartmentSlug,
@@ -7,7 +10,6 @@ import {
 } from "@/shared/config/affiliate-taxonomy";
 
 import {
-  isHttpsUrl,
   isNonEmptyString,
   isNonNegativeFiniteNumber,
   isPublicCatalogImageUrl,
@@ -114,9 +116,9 @@ export function isPublishableAffiliateProduct(value: unknown): value is Publisha
     !isNonEmptyString(value.productIdShopee) ||
     !isNonEmptyString(value.slug) ||
     !isNonEmptyString(value.title) ||
-    !isHttpsUrl(value.affiliateUrl) ||
     !isNullableString(value.category) ||
     !isAffiliateMarketplace(value.marketplace) ||
+    !isAllowedAffiliateDestination(value.affiliateUrl, value.marketplace) ||
     value.isActive !== true
   ) {
     return false;
@@ -150,8 +152,8 @@ export function isPublicAffiliateProduct(value: unknown): value is PublicAffilia
     isNonEmptyString(value.productIdShopee) &&
     isNonEmptyString(value.slug) &&
     isNonEmptyString(value.title) &&
-    isHttpsUrl(value.affiliateUrl) &&
     isAffiliateMarketplace(value.marketplace) &&
+    isAllowedAffiliateDestination(value.affiliateUrl, value.marketplace) &&
     isNullableString(value.category) &&
     value.isActive === true &&
     (value.imageUrl === null || isPublicCatalogImageUrl(value.imageUrl)) &&

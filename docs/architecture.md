@@ -54,3 +54,21 @@ As rotas publicas do catalogo foram implementadas na Fase 2 com leitura
 server-only, RPCs de retorno explicito, paginacao keyset e validacao runtime.
 As fases seguintes podem evoluir ingestao e operacao administrativa sem mover a
 fonte oficial de `public.products`.
+
+## API interna e operacao administrativa
+
+Os route handlers em `src/app/api/internal/catalog/` sao server-only e exigem
+`AFFILIATE_VITRINE_INTERNAL_SECRET` em Bearer. Eles delegam para
+`features/affiliate-product-ingestion` e `features/classification-review`, que
+usam o client service-role somente no servidor. O backend e o BFF autenticado;
+o frontend React consulta o backend e segue o layout existente do painel.
+
+O endpoint de ingestao aceita apenas dados brutos. A taxonomia e o classificador
+continuam neste app, com `ingest-rules-v1`; nenhuma folha enviada pelo caller e
+aceita. Produtos `review` ficam fora do catalogo ate aprovacao por folha
+canonica, usando compare-and-swap da revisao. `record_click` continua em um
+cliente separado e nao participa das escritas administrativas. Approve e
+deactivate carregam `operation_id` UUID: retry do mesmo comando e seguro, mas
+uma operacao diferente sobre uma revisao alterada resulta em `409`. A migration
+administrativa que adiciona esses campos ainda e revisavel e pendente de
+aplicacao manual.

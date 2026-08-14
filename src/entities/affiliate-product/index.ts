@@ -46,3 +46,15 @@ export {
   type LegacyClassificationReason,
   type LegacyClassificationStatus,
 } from "./model/affiliate-classification";
+export {
+  classifyAffiliateProductForIngestion,
+  affiliateIngestionClassificationSource,
+  type AffiliateIngestionClassification,
+  type AffiliateIngestionClassificationInput,
+  type AffiliateIngestionClassificationSource,
+} from "./model/affiliate-ingestion-classification";
+export {
+  affiliateClassificationStatuses,
+  type AffiliateClassificationReason,
+  type AffiliateClassificationStatus,
+} from "./model/affiliate-classification-core";

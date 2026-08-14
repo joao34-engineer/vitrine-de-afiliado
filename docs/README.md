@@ -28,6 +28,7 @@ Entrada obrigatoria para LLMs e humanos antes de trabalhar no `affiliate-vitrine
 | Dept rail e hairline animada | `dept-rail-hairline-motion.md` |
 | Migracao automatica do catalogo legado | `catalog-migration-map.md` |
 | Backfill local e classificacao revisavel | `backfill-classification-runbook.md` |
+| Ingestao administrativa e console de review | `execution-doc/affiliate-vitrine-3-fases.md` + `supabase-runtime-runbook.md` |
 | Execucao do produto em 3 fases | `execution-doc/affiliate-vitrine-3-fases.md` |
 
 ## Decisoes Vigentes

@@ -171,3 +171,70 @@ DoD:
 - O sheet continua sem fetch e o catalogo continua server-only.
 - Testes, TypeScript, lint e build passam.
 - Nenhum contrato de seguranca ou tracking foi ampliado.
+
+## Eixo operacional - Ingestao e console de revisao de classificacao
+
+Status: implementado localmente; migration administrativa, configuracao M2M e
+deploy ainda pendentes. O catalogo e o go-live continuam operacionais sem este eixo;
+enquanto o deploy do fluxo nao for concluido, a revisao manual por
+lote/arquivo revisavel continua sendo o procedimento operacional.
+
+O fluxo oficial novo e:
+
+1. O backend envia o produto bruto para a API interna server-only da vitrine.
+2. A vitrine executa o classificador canonico `ingest-rules-v1`.
+3. `auto` fica elegivel ao catalogo; `review` e salvo, mas permanece oculto.
+4. O console autenticado do backend lista a fila e envia somente a folha
+   escolhida para aprovacao.
+5. A vitrine deriva departamento/subcategoria, aplica CAS por revisao e
+   invalida o cache publico somente depois da escrita confirmada.
+
+Reenvios usam `product_id_shopee` como chave idempotente. Produtos manuais e
+inativos nao sao sobrescritos pelo classificador automatico. A chave de
+tracking continua isolada e nao participa de nenhuma operacao administrativa.
+Approve e deactivate usam `operation_id` UUID para diferenciar retry idempotente
+de concorrencia real; uma revisao nova invalida a operacao anterior.
+
+### Objetivo
+
+A area administrativa na dashboard do sistema principal revisa produtos que o
+classificador marcou como `review`. A vitrine publica nao recebe essa
+interface; ela continua somente leitura e server-only.
+
+### Fluxo previsto
+
+1. O backend identifica produtos com `classification_review_status = 'review'`.
+2. A dashboard mostra titulo, imagem, `category` legado, sugestao do
+   classificador, confianca e motivo do conflito.
+3. O operador escolhe uma folha da taxonomia canonica em uma lista agrupada por
+   departamento. A escolha nao sera texto livre.
+4. O backend valida o `leaf_slug` e deriva `department_slug` e
+   `subcategory_slug` pela taxonomia oficial.
+5. A aprovacao atualiza somente os campos de classificacao e muda o status para
+   `auto`, tornando o produto elegivel para a leitura publica.
+6. Um produto pode permanecer em `review` ou ser desativado sem ser apagado.
+
+A escolha manual de folha fica restrita aos casos ambiguos. Produtos com sinal
+forte e folha unica continuam sendo classificados automaticamente pelo pipeline.
+
+### Seguranca e contratos
+
+- A dashboard chama endpoints administrativos autenticados do backend.
+- O navegador nao acessa o Supabase com `SUPABASE_SERVICE_ROLE_KEY`.
+- Operacoes administrativas usam o cliente de produtos com service role
+  somente no servidor.
+- `SUPABASE_ANON_KEY` permanece leitura publica e `SUPABASE_CLICK_KEY`
+  permanece exclusiva do `record_click`.
+- O backend aceita somente slugs canonicos e atualiza apenas campos de
+  classificacao; `category`, titulo, precos, imagens e links permanecem
+  preservados.
+- A publicacao continua protegida por RLS/RPC: produtos `review` nao aparecem
+  na vitrine.
+
+### Fora do eixo
+
+- Nao substitui o classificador deterministico.
+- Nao transforma a dashboard em editor geral de produtos.
+- Nao altera `my-collection-page`.
+- Nao adiciona Pixel, CAPI, Shopify ou uma nova regra de tracking.
+- Nao adiciona Pixel, CAPI, Shopify, embedding ou `price_history`.

@@ -10,6 +10,20 @@ const migration = readFileSync(
   ),
   "utf8",
 );
+const adminMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    "supabase/migrations/20260814000000_add_affiliate_ingestion_review_operations.sql",
+  ),
+  "utf8",
+);
+const destinationMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    "supabase/migrations/20260814010000_align_affiliate_destination_allowlist.sql",
+  ),
+  "utf8",
+);
 
 describe("public catalog migration contract", () => {
   it("keeps the migration non-destructive and bounded", () => {
@@ -38,5 +52,40 @@ describe("public catalog migration contract", () => {
     expect(migration).toMatch(/shopee_affiliate_link\s+text/i);
     expect(publicReturnDefinitions).not.toMatch(/classification_confidence/i);
     expect(publicReturnDefinitions).not.toMatch(/classification_review_status\s+text,?/i);
+  });
+});
+
+describe("affiliate ingestion migration contract", () => {
+  it("is additive, transactional and never destructive", () => {
+    expect(adminMigration).not.toMatch(/drop\s+(function|table|column)/i);
+    expect(adminMigration).not.toMatch(/\b(delete|truncate)\b/i);
+    expect(adminMigration).toMatch(/begin;/i);
+    expect(adminMigration).toMatch(/commit;/i);
+    expect(adminMigration).toMatch(/add column if not exists classification_last_operation_id/i);
+    expect(adminMigration).toMatch(/products_classification_operation_shape_check/i);
+    expect(adminMigration).toMatch(/classification_last_operation_kind/i);
+    expect(adminMigration).toMatch(/p_operation_id uuid/i);
+    expect(adminMigration).toMatch(/create or replace function/i);
+    expect(adminMigration).toMatch(/revoke all on function/i);
+    expect(adminMigration).toMatch(/to service_role/i);
+  });
+
+  it("preflights schema and keeps administrative RPCs out of public roles", () => {
+    expect(adminMigration).toMatch(/pg_get_constraintdef/i);
+    expect(adminMigration).toMatch(/pg_get_indexdef/i);
+    expect(adminMigration).toMatch(/information_schema\.columns/i);
+    expect(adminMigration).toMatch(/classification_review_status = 'review'/i);
+    expect(adminMigration).toMatch(/classification_review_status = 'auto'/i);
+    expect(adminMigration).toMatch(/from public, anon, authenticated/i);
+    expect(adminMigration).not.toMatch(/grant execute[\s\S]*to (public|anon|authenticated)/i);
+  });
+
+  it("keeps the corrective destination migration aligned with runtime allowlists", () => {
+    expect(destinationMigration).toMatch(/begin;/i);
+    expect(destinationMigration).toMatch(/commit;/i);
+    expect(destinationMigration).toMatch(/create or replace function public\.get_public_affiliate_product/i);
+    expect(destinationMigration).toMatch(/br\[\.\]shp\[\.\]ee/i);
+    expect(destinationMigration).not.toMatch(/shopeesz/i);
+    expect(destinationMigration).not.toMatch(/drop\s+(function|table|column)/i);
   });
 });

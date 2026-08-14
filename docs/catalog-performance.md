@@ -58,8 +58,8 @@ O cursor deve ser opaco para a URL e nao pode carregar segredo ou dados internos
 - A politica ativa usa Cache Components, `use cache`, `cacheLife` e tags.
 - Perfil efetivo do catalogo: `stale = 60`, `revalidate = 300`, `expire = 900`.
 - As tags cobrem catalogo, departamento, folha, busca e produto.
-- A futura ingestao administrativa devera invalidar as tags afetadas depois de
-  uma escrita confirmada; nenhuma invalidacao e executada nesta fase.
+- A ingestao administrativa invalida as tags afetadas somente depois de uma
+  escrita confirmada; falha de invalidacao nao e convertida em sucesso falso.
 - Nao adicionar `staleTimes`, `dynamic`, `fetchCache` ou outra configuracao
   experimental sem uma decisao documentada e teste de build.
 - O catalogo aceita consistencia eventual curta; erros nao entram no cache como
