@@ -5,9 +5,9 @@ import { CatalogHeader } from "@/widgets/catalog-header";
 
 export function CatalogShell({ children }: Readonly<{ children: ReactNode }>): React.JSX.Element {
   return (
-    <div className="catalog-app">
+      <div className="catalog-app">
       <CatalogHeader />
-      <main className="catalog-main">{children}</main>
+      <main className="catalog-main" data-sheet-background>{children}</main>
       <CatalogFooter />
     </div>
   );

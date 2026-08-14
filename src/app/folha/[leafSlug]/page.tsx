@@ -15,6 +15,6 @@ export default async function LeafPage({ params, searchParams }: { params: Promi
   const paramsForPage = await searchParams;
   const page = await listPublicAffiliateProductPages({ departmentSlug: leaf.departmentSlug, leafSlug, pageNumber: paramsForPage.pagina, startingCursor: paramsForPage.cursor });
   const nextHref = page.hasNextPage ? createCatalogPaginationHref({ pathname: `/folha/${leafSlug}`, pageNumber: page.pageNumber < 10 ? page.pageNumber + 1 : 1, startingCursor: page.pageNumber < 10 ? page.startingCursor : page.nextCursor }) : null;
-  const previousHref = page.pageNumber > 1 ? createCatalogPaginationHref({ pathname: `/folha/${leafSlug}`, pageNumber: page.pageNumber - 1, startingCursor: page.startingCursor }) : page.startingCursor ? `/folha/${leafSlug}` : null;
+  const previousHref = page.pageNumber > 1 ? createCatalogPaginationHref({ pathname: `/folha/${leafSlug}`, pageNumber: page.pageNumber - 1, startingCursor: page.startingCursor }) : null;
   return <CatalogShell><CatalogListing eyebrow="Folha" title={leaf.label} description={leaf.description} products={page.items} nextHref={nextHref} nextLabel={page.pageNumber === 10 ? "Proxima janela" : undefined} previousHref={previousHref} /></CatalogShell>;
 }

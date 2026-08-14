@@ -5,7 +5,7 @@ import { DepartmentRail } from "@/features/department-navigation";
 export function CatalogHeader(): React.JSX.Element {
   return (
     <header className="site-header">
-      <div className="header-inner">
+      <div className="header-inner" data-sheet-background>
         <Link className="brand-lockup" href="/" aria-label="Salvat Ofertas, inicio">
           <span className="brand-mark" aria-hidden="true">S</span>
           <span>

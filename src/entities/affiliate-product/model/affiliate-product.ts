@@ -6,6 +6,14 @@ import {
   type SubcategorySlug,
 } from "@/shared/config/affiliate-taxonomy";
 
+import {
+  isHttpsUrl,
+  isNonEmptyString,
+  isNonNegativeFiniteNumber,
+  isPublicCatalogImageUrl,
+  isSupportedUuid,
+} from "./public-product-validation";
+
 export const affiliateMarketplaces = ["shopee", "amazon", "mercado-livre", "other"] as const;
 export const classificationReviewStatuses = ["auto", "review"] as const;
 
@@ -39,7 +47,20 @@ export type PublishableAffiliateProduct = AffiliateProductPricing &
     readonly isActive: true;
   };
 
-export type PublicAffiliateProduct = PublishableAffiliateProduct;
+export type PublicAffiliateProduct = AffiliateProductPricing & {
+  readonly id: string;
+  readonly productIdShopee: string;
+  readonly slug: string;
+  readonly title: string;
+  readonly imageUrl: string | null;
+  readonly affiliateUrl: string;
+  readonly marketplace: AffiliateMarketplace;
+  readonly category: string | null;
+  readonly isActive: true;
+  readonly departmentSlug: DepartmentSlug;
+  readonly subcategorySlug: SubcategorySlug | null;
+  readonly leafSlug: LeafSlug;
+};
 
 export type PublicAffiliateProductCardData = {
   readonly id: string;
@@ -54,16 +75,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
-}
-
 function isNullableString(value: unknown): value is string | null {
   return typeof value === "string" || value === null;
 }
 
-function isNullableNumber(value: unknown): value is number | null {
-  return typeof value === "number" || value === null;
+function isNullablePrice(value: unknown): value is number | null {
+  return value === null || isNonNegativeFiniteNumber(value);
 }
 
 function isClassificationReviewStatus(value: unknown): value is ClassificationReviewStatus | null {
@@ -84,7 +101,7 @@ function hasValidOptionalSubcategory(value: unknown): value is SubcategorySlug |
 
 function hasValidNullableNumberField(record: Record<string, unknown>, fieldName: string): boolean {
   const value = record[fieldName];
-  return value === undefined || isNullableNumber(value);
+  return value === undefined || isNullablePrice(value);
 }
 
 export function isPublishableAffiliateProduct(value: unknown): value is PublishableAffiliateProduct {
@@ -93,11 +110,11 @@ export function isPublishableAffiliateProduct(value: unknown): value is Publisha
   }
 
   if (
-    !isNonEmptyString(value.id) ||
+    !isSupportedUuid(value.id) ||
     !isNonEmptyString(value.productIdShopee) ||
     !isNonEmptyString(value.slug) ||
     !isNonEmptyString(value.title) ||
-    !isNonEmptyString(value.affiliateUrl) ||
+    !isHttpsUrl(value.affiliateUrl) ||
     !isNullableString(value.category) ||
     !isAffiliateMarketplace(value.marketplace) ||
     value.isActive !== true
@@ -105,7 +122,7 @@ export function isPublishableAffiliateProduct(value: unknown): value is Publisha
     return false;
   }
 
-  if (!isNullableString(value.imageUrl)) {
+  if (value.imageUrl !== null && !isPublicCatalogImageUrl(value.imageUrl)) {
     return false;
   }
 
@@ -126,10 +143,21 @@ export function isPublishableAffiliateProduct(value: unknown): value is Publisha
 }
 
 export function isPublicAffiliateProduct(value: unknown): value is PublicAffiliateProduct {
+  if (!isRecord(value)) return false;
+
   return (
-    isPublishableAffiliateProduct(value) &&
-    value.classificationReviewStatus === "auto" &&
-    value.departmentSlug !== null &&
-    value.leafSlug !== null
+    isSupportedUuid(value.id) &&
+    isNonEmptyString(value.productIdShopee) &&
+    isNonEmptyString(value.slug) &&
+    isNonEmptyString(value.title) &&
+    isHttpsUrl(value.affiliateUrl) &&
+    isAffiliateMarketplace(value.marketplace) &&
+    isNullableString(value.category) &&
+    value.isActive === true &&
+    (value.imageUrl === null || isPublicCatalogImageUrl(value.imageUrl)) &&
+    hasValidNullableNumberField(value, "priceOriginalCents") &&
+    hasValidNullableNumberField(value, "priceDiscountCents") &&
+    hasValidOptionalSubcategory(value.subcategorySlug) &&
+    isDepartmentLeafPair(value.departmentSlug, value.leafSlug)
   );
 }

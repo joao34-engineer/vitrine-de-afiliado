@@ -3,11 +3,11 @@ import { describe, expect, it } from "vitest";
 import { isPublishableAffiliateProduct, type PublishableAffiliateProduct } from "..";
 
 const baseProduct = {
-  id: "product-1",
+  id: "550e8400-e29b-41d4-a716-446655440000",
   productIdShopee: "123.456",
   slug: "fone-bluetooth",
   title: "Fone bluetooth",
-  imageUrl: "https://example.com/fone.jpg",
+  imageUrl: "https://cf.shopee.com.br/file/fone.jpg",
   affiliateUrl: "https://example.com/oferta",
   marketplace: "shopee",
   category: "Categoria legada livre",

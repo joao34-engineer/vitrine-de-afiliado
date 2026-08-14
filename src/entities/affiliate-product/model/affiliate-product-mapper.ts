@@ -6,7 +6,21 @@ import {
 } from "./affiliate-product";
 import type { SupabaseProductRow } from "@/types/supabase";
 import type { SupabasePublicProductRow } from "@/types/supabase";
-import { isDepartmentLeafPair, isSubcategorySlug } from "@/shared/config/affiliate-taxonomy";
+import type { SupabasePublicAffiliateProductDetailRow } from "@/types/supabase";
+import {
+  isDepartmentLeafPair,
+  isDepartmentSlug,
+  isLeafSlug,
+  isSubcategorySlug,
+} from "@/shared/config/affiliate-taxonomy";
+import { isAllowedAffiliateDestination } from "./affiliate-destination";
+import {
+  isNonEmptyString,
+  isNonNegativeFiniteNumber,
+  isPublicCatalogImageUrl,
+  isSupportedUuid,
+  isValidCatalogDate,
+} from "./public-product-validation";
 
 type SupabaseProductMappingRow = Pick<
   SupabaseProductRow,
@@ -19,6 +33,7 @@ type SupabaseProductMappingRow = Pick<
   | "shopee_affiliate_link"
   | "category"
   | "is_active"
+  | "created_at"
   | "department_slug"
   | "subcategory_slug"
   | "leaf_slug"
@@ -28,20 +43,7 @@ type SupabaseProductMappingRow = Pick<
 >;
 
 function toCents(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? Math.round(value * 100) : null;
-}
-
-function isHttpUrl(value: unknown): value is string {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    return false;
-  }
-
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
+  return isNonNegativeFiniteNumber(value) ? Math.round(value * 100) : null;
 }
 
 function toSlugSegment(value: string): string {
@@ -67,8 +69,12 @@ export function mapSupabaseProductRowToPublishableAffiliateProduct(
   if (
     originalPriceCents === null ||
     discountPriceCents === null ||
-    !isHttpUrl(row.image_url) ||
-    !isHttpUrl(row.shopee_affiliate_link)
+    !isSupportedUuid(row.id) ||
+    !isNonEmptyString(row.product_id_shopee) ||
+    !isNonEmptyString(row.title) ||
+    !isPublicCatalogImageUrl(row.image_url) ||
+    !isAllowedAffiliateDestination(row.shopee_affiliate_link, "shopee") ||
+    !isValidCatalogDate(row.created_at)
   ) {
     return null;
   }
@@ -110,7 +116,70 @@ export function mapSupabaseProductRowToPublicAffiliateProduct(
   row: SupabaseProductMappingRow,
 ): PublicAffiliateProduct | null {
   const product = mapSupabaseProductRowToPublishableAffiliateProduct(row);
-  return product !== null && isPublicAffiliateProduct(product) ? product : null;
+  if (product === null || product.classificationReviewStatus !== "auto") {
+    return null;
+  }
+
+  return {
+    id: product.id,
+    productIdShopee: product.productIdShopee,
+    slug: product.slug,
+    title: product.title,
+    imageUrl: product.imageUrl,
+    affiliateUrl: product.affiliateUrl,
+    marketplace: product.marketplace,
+    category: product.category,
+    isActive: product.isActive,
+    priceOriginalCents: product.priceOriginalCents,
+    priceDiscountCents: product.priceDiscountCents,
+    departmentSlug: product.departmentSlug,
+    subcategorySlug: product.subcategorySlug,
+    leafSlug: product.leafSlug,
+  };
+}
+
+export function mapSupabasePublicAffiliateProductDetailRow(
+  row: SupabasePublicAffiliateProductDetailRow,
+): PublicAffiliateProduct | null {
+  const originalPriceCents = toCents(row.price_original);
+  const discountPriceCents = toCents(row.price_discount);
+
+  if (
+    !isSupportedUuid(row.id) ||
+    !isNonEmptyString(row.product_id_shopee) ||
+    !isNonEmptyString(row.title) ||
+    originalPriceCents === null ||
+    discountPriceCents === null ||
+    !isPublicCatalogImageUrl(row.image_url) ||
+    !isAllowedAffiliateDestination(row.shopee_affiliate_link, "shopee") ||
+    !isValidCatalogDate(row.created_at) ||
+    row.is_active !== true ||
+    !isDepartmentSlug(row.department_slug) ||
+    !isLeafSlug(row.leaf_slug) ||
+    (row.subcategory_slug !== null && !isSubcategorySlug(row.subcategory_slug)) ||
+    !isDepartmentLeafPair(row.department_slug, row.leaf_slug)
+  ) {
+    return null;
+  }
+
+  const product: PublicAffiliateProduct = {
+    id: row.id,
+    productIdShopee: row.product_id_shopee,
+    slug: deriveAffiliateProductSlug(row),
+    title: row.title,
+    imageUrl: row.image_url,
+    affiliateUrl: row.shopee_affiliate_link,
+    marketplace: "shopee",
+    category: row.category,
+    isActive: true,
+    priceOriginalCents: originalPriceCents,
+    priceDiscountCents: discountPriceCents,
+    departmentSlug: row.department_slug,
+    subcategorySlug: row.subcategory_slug,
+    leafSlug: row.leaf_slug,
+  };
+
+  return isPublicAffiliateProduct(product) ? product : null;
 }
 
 export function mapSupabasePublicProductRowToCard(
@@ -120,20 +189,18 @@ export function mapSupabasePublicProductRowToCard(
   const discountPriceCents = toCents(row.price_discount);
 
   if (
-    row.id.trim().length === 0 ||
-    row.product_id_shopee.trim().length === 0 ||
-    row.title.trim().length === 0 ||
+    !isSupportedUuid(row.id) ||
+    !isNonEmptyString(row.product_id_shopee) ||
+    !isNonEmptyString(row.title) ||
     originalPriceCents === null ||
     discountPriceCents === null ||
-    !isHttpUrl(row.image_url) ||
+    !isPublicCatalogImageUrl(row.image_url) ||
+    !isValidCatalogDate(row.created_at) ||
     row.is_active !== true ||
-    row.classification_review_status !== "auto" ||
     row.department_slug === null ||
     row.leaf_slug === null ||
     (row.subcategory_slug !== null && !isSubcategorySlug(row.subcategory_slug)) ||
-    !isDepartmentLeafPair(row.department_slug, row.leaf_slug) ||
-    (row.classification_confidence !== null &&
-      (row.classification_confidence < 0 || row.classification_confidence > 1))
+    !isDepartmentLeafPair(row.department_slug, row.leaf_slug)
   ) {
     return null;
   }

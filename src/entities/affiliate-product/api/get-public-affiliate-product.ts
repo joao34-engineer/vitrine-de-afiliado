@@ -3,17 +3,14 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { createPublicSupabaseClient } from "@/shared/api/supabase";
 
-import { isPublicAffiliateProduct } from "../model/affiliate-product";
-import { mapSupabaseProductRowToPublicAffiliateProduct } from "../model/affiliate-product-mapper";
+import { mapSupabasePublicAffiliateProductDetailRow } from "../model/affiliate-product-mapper";
 import type { PublicAffiliateProduct } from "../model/affiliate-product";
 import { isSupabasePublicAffiliateProductDetailRow } from "../model/public-affiliate-product-row";
 import { PublicAffiliateProductCatalogError } from "../model/public-affiliate-product-catalog-error";
+import { isSupportedUuid } from "../model/public-product-validation";
 
 export function isAffiliateProductId(value: unknown): value is string {
-  return (
-    typeof value === "string" &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.trim())
-  );
+  return isSupportedUuid(value);
 }
 
 export async function getPublicAffiliateProductById(
@@ -50,15 +47,41 @@ export async function getPublicAffiliateProductById(
     return null;
   }
 
-  if (data.length !== 1 || !isSupabasePublicAffiliateProductDetailRow(data[0])) {
+  if (data.length !== 1 || typeof data[0] !== "object" || data[0] === null) {
     throw new PublicAffiliateProductCatalogError(
       "invalid-response",
       "Supabase returned an invalid public affiliate product.",
     );
   }
 
-  const product = mapSupabaseProductRowToPublicAffiliateProduct(data[0]);
-  return product !== null && isPublicAffiliateProduct(product) ? product : null;
+  const row = data[0] as Record<string, unknown>;
+  const requiredFields = [
+    "id",
+    "product_id_shopee",
+    "title",
+    "price_original",
+    "price_discount",
+    "image_url",
+    "shopee_affiliate_link",
+    "category",
+    "is_active",
+    "created_at",
+    "department_slug",
+    "subcategory_slug",
+    "leaf_slug",
+  ];
+  if (requiredFields.some((field) => !(field in row))) {
+    throw new PublicAffiliateProductCatalogError(
+      "invalid-response",
+      "Supabase returned an incomplete public affiliate product.",
+    );
+  }
+
+  if (!isSupabasePublicAffiliateProductDetailRow(data[0])) {
+    return null;
+  }
+
+  return mapSupabasePublicAffiliateProductDetailRow(data[0]);
 }
 
 export async function getCachedPublicAffiliateProductById(

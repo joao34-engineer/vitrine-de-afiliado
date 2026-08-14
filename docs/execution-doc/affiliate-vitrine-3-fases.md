@@ -98,11 +98,11 @@ sheet local, listagens por departamento/folha, busca full-text, paginacao
 cursor-based, PDP, redirect `record_click` fail-open, footer e estados de
 loading/erro.
 
-A migration de indices e busca continua somente revisavel em
-`supabase/migrations/20260813000000_add_affiliate_catalog_search_and_indexes.sql`.
-O diagnostico `supabase/diagnostics/20260813_catalog_readonly_verification.sql`
-deve ser executado manualmente antes de qualquer aplicacao. Nenhuma migration
-de performance foi aplicada automaticamente.
+A migration de indices e busca foi aplicada manualmente no Supabase a partir de
+`supabase/migrations/20260813000000_add_affiliate_catalog_search_and_public_access.sql`.
+O diagnostico pre-migration foi revisado antes da aplicacao e o diagnostico
+pos-migration confirmou a coluna gerada, os indices, as RPCs, os grants e os
+planos `EXPLAIN`. Nenhuma migration e aplicada automaticamente pelo app.
 
 Pixel e CAPI continuam fora do projeto. O caminho publico nao usa service role
 nem qualquer chave administrativa.
@@ -114,11 +114,16 @@ Objetivo: preparar a vitrine para producao.
 Entregas:
 
 - UX mobile revisada.
-- SEO basico: metadata, sitemap, robots e JSON-LD quando aplicavel.
 - Performance e imagens remotas configuradas.
 - Checklist de dominio `ofertas.salvatbrand.com.br`.
 - Deploy Vercel separado.
 - Smoke do funil Instagram/DM -> PDP -> clique de saida.
+
+Adiado nesta fase:
+
+- SEO basico, incluindo metadata orientada a busca, sitemap, robots e JSON-LD.
+  SEO nao bloqueia o go-live da vitrine afiliada e sera retomado somente se
+  houver uma necessidade concreta de descoberta organica.
 
 Nao fazer:
 
@@ -133,3 +138,36 @@ DoD:
 - Produto de teste abre via PDP.
 - Redirect chega na oferta permitida.
 - Operacao sabe onde revisar logs e env vars.
+
+## Fase 4 - Implementacao do Design
+
+Objetivo: trazer para a `affiliate-vitrine` o design aprovado no Figma, sem
+reabrir contratos de dados, seguranca ou arquitetura ja concluidos.
+
+Entregas:
+
+- Mapear os frames aprovados para home, rail, sheet, listing, PDP e estados de
+  carregamento/erro.
+- Implementar o design em TypeScript/TSX, respeitando a arquitetura FSD leve e
+  os componentes server-only do catalogo.
+- Alinhar tokens visuais, tipografia, espacamento, temas claro/escuro e
+  responsividade com o arquivo do Figma.
+- Preservar navegacao por departamento/folha, paginacao server-only, redirect e
+  disclosure de afiliado.
+- Validar visualmente desktop e mobile com screenshots e revisar acessibilidade
+  das interacoes existentes.
+
+Nao fazer:
+
+- Nao alterar `my-collection-page`.
+- Nao reintroduzir Shopify, Pixel ou CAPI.
+- Nao substituir a taxonomia, os contratos Supabase ou a politica de acesso.
+- Nao transformar cards ou consultas em fluxo client-side sem decisao explicita.
+
+DoD:
+
+- Os frames aprovados estao representados nas rotas reais da vitrine.
+- O comportamento visual e responsivo foi validado em desktop e mobile.
+- O sheet continua sem fetch e o catalogo continua server-only.
+- Testes, TypeScript, lint e build passam.
+- Nenhum contrato de seguranca ou tracking foi ampliado.

@@ -6,7 +6,7 @@ export function CatalogFooter(): React.JSX.Element {
   const env = getPublicEnv();
 
   return (
-    <footer className="site-footer">
+    <footer className="site-footer" data-sheet-background>
       <div className="footer-grid">
         <div className="footer-brand">
           <p className="brand-name">salvat&amp;brand</p>

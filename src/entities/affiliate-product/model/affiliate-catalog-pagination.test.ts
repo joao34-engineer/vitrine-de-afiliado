@@ -26,6 +26,17 @@ describe("affiliate catalog pagination", () => {
     expect(() => normalizePublicCatalogPageSize(25)).toThrow();
   });
 
+  it("accepts a modern UUID v7 in the public cursor", () => {
+    const encoded = encodePublicAffiliateProductCursor({
+      createdAt: "2026-08-13T00:00:00.000Z",
+      id: "018f47bf-8f47-7f32-995e-db19a8753c81",
+    });
+
+    expect(decodePublicAffiliateProductCursor(encoded)?.id).toBe(
+      "018f47bf-8f47-7f32-995e-db19a8753c81",
+    );
+  });
+
   it("limits progressive navigation to ten server-rendered pages", () => {
     expect(normalizePublicCatalogPageNumber("10")).toBe(10);
     expect(() => normalizePublicCatalogPageNumber("11")).toThrow();

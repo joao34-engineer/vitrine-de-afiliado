@@ -16,7 +16,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   const page = await searchPublicAffiliateProductPages({ query: rawQuery, pageNumber: params.pagina, startingCursor: params.cursor });
   const fixedParams = { q: rawQuery };
   const nextHref = page.hasNextPage ? createCatalogPaginationHref({ pathname: "/buscar", params: fixedParams, pageNumber: page.pageNumber < 10 ? page.pageNumber + 1 : 1, startingCursor: page.pageNumber < 10 ? page.startingCursor : page.nextCursor }) : null;
-  const previousHref = page.pageNumber > 1 ? createCatalogPaginationHref({ pathname: "/buscar", params: fixedParams, pageNumber: page.pageNumber - 1, startingCursor: page.startingCursor }) : page.startingCursor ? `/buscar?q=${encodeURIComponent(rawQuery)}` : null;
+  const previousHref = page.pageNumber > 1 ? createCatalogPaginationHref({ pathname: "/buscar", params: fixedParams, pageNumber: page.pageNumber - 1, startingCursor: page.startingCursor }) : null;
 
   return <CatalogShell><section className="catalog-section"><div className="catalog-heading"><div><p className="eyebrow">Resultados para</p><h1>&quot;{rawQuery}&quot;</h1><p className="catalog-description">Produtos encontrados na curadoria publica.</p></div></div>{page.items.length > 0 ? <SearchResultGrid items={page.items} nextHref={nextHref} nextLabel={page.pageNumber === 10 ? "Proxima janela" : undefined} previousHref={previousHref} /> : <div className="empty-state"><h2>Nenhuma oferta encontrada</h2><p>Tente buscar por outro nome de produto.</p></div>}</section></CatalogShell>;
 }

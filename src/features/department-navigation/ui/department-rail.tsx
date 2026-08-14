@@ -25,6 +25,11 @@ function DepartmentSheet({
 
   useEffect(() => {
     const triggerElement = triggerRef.current;
+    const backgroundElements = Array.from(document.querySelectorAll<HTMLElement>("[data-sheet-background]"));
+    backgroundElements.forEach((element) => {
+      element.inert = true;
+      element.setAttribute("aria-hidden", "true");
+    });
     closeButtonRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -48,6 +53,10 @@ function DepartmentSheet({
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      backgroundElements.forEach((element) => {
+        element.inert = false;
+        element.removeAttribute("aria-hidden");
+      });
       triggerElement?.focus();
     };
   }, [onClose, triggerRef]);
@@ -57,7 +66,9 @@ function DepartmentSheet({
       <aside
         ref={sheetRef}
         className="department-sheet"
+        id="department-sheet"
         aria-labelledby="department-sheet-title"
+        aria-describedby="department-sheet-description"
         role="dialog"
         aria-modal="true"
         onClick={(event) => event.stopPropagation()}
@@ -67,9 +78,9 @@ function DepartmentSheet({
             <p className="eyebrow">Departamento</p>
             <h2 id="department-sheet-title">{department?.label ?? departmentSlug}</h2>
           </div>
-          <button ref={closeButtonRef} type="button" className="icon-button" aria-label="Fechar menu" onClick={onClose}>X</button>
+          <button ref={closeButtonRef} type="button" className="icon-button" aria-label="Fechar menu" aria-controls="department-sheet" onClick={onClose}>X</button>
         </div>
-        <p className="sheet-description">{department?.description}</p>
+        <p id="department-sheet-description" className="sheet-description">{department?.description}</p>
         <nav className="sheet-leaves" aria-label="Folhas do departamento">
           <Link href={`/departamento/${departmentSlug}`} onClick={onClose} className="sheet-leaf sheet-leaf-all">Todos</Link>
           {leaves.map((leaf) => (
@@ -89,26 +100,29 @@ export function DepartmentRail(): React.JSX.Element {
 
   return (
     <div className="department-rail-wrap">
-      <nav className="department-rail" aria-label="Departamentos">
-        {listDepartments().map((department) => department.slug === "home" ? (
-          <Link key={department.slug} className="department-trigger" href="/">{department.label}</Link>
-        ) : (
-          <button
-            ref={openDepartment === department.slug ? triggerRef : undefined}
-            type="button"
-            key={department.slug}
-            className={`department-trigger ${openDepartment === department.slug ? "is-active" : ""}`}
-            aria-expanded={openDepartment === department.slug}
-            onClick={(event) => {
-              triggerRef.current = event.currentTarget;
-              setOpenDepartment(department.slug);
-            }}
-          >
-            {department.label}
-          </button>
-        ))}
-      </nav>
-      <DepartmentRailDivider />
+      <div data-sheet-background>
+        <nav className="department-rail" aria-label="Departamentos">
+          {listDepartments().map((department) => department.slug === "home" ? (
+            <Link key={department.slug} className="department-trigger" href="/">{department.label}</Link>
+          ) : (
+            <button
+              ref={openDepartment === department.slug ? triggerRef : undefined}
+              type="button"
+              key={department.slug}
+              className={`department-trigger ${openDepartment === department.slug ? "is-active" : ""}`}
+              aria-expanded={openDepartment === department.slug}
+              aria-controls="department-sheet"
+              onClick={(event) => {
+                triggerRef.current = event.currentTarget;
+                setOpenDepartment(department.slug);
+              }}
+            >
+              {department.label}
+            </button>
+          ))}
+        </nav>
+        <DepartmentRailDivider />
+      </div>
       {openDepartment !== null ? <DepartmentSheet departmentSlug={openDepartment} onClose={() => setOpenDepartment(null)} triggerRef={triggerRef} /> : null}
     </div>
   );

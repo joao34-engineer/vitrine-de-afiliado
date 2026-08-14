@@ -9,7 +9,7 @@ vi.mock("next/server", async () => {
 });
 vi.mock("@/entities/affiliate-product/index.server", () => ({
   getPublicAffiliateProductById: vi.fn(),
-  isAffiliateProductId: vi.fn((value: string) => value === "550e8400-e29b-41d4-a716-446655440000"),
+  isAffiliateProductId: vi.fn((value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)),
 }));
 vi.mock("@/entities/affiliate-product", () => ({
   isAllowedAffiliateDestination: vi.fn(),
@@ -35,7 +35,7 @@ const product = {
   title: "Fone Bluetooth",
   priceOriginal: 129.9,
   priceDiscount: 99.9,
-  imageUrl: "https://cdn.example.com/fone.jpg",
+  imageUrl: "https://cf.shopee.com.br/file/fone.jpg",
   affiliateUrl: "https://shopee.com.br/product/123",
   category: "Eletronicos",
   isActive: true,
@@ -95,6 +95,29 @@ describe("affiliate product redirect", () => {
 
     expect(response.status).toBe(302);
     expect(response.headers.get("location")).toBe(product.affiliateUrl);
+  });
+
+  it("keeps the redirect working when record_click returns an error", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: null, error: new Error("tracking rejected") });
+    vi.mocked(createTrackingSupabaseClient).mockReturnValue({ rpc } as never);
+
+    const response = await GET(request(), {
+      params: Promise.resolve({ productId: product.id }),
+    });
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("location")).toBe(product.affiliateUrl);
+  });
+
+  it("uses the safe fallback for an invalid product id", async () => {
+    const response = await GET(
+      new NextRequest("https://ofertas.salvatbrand.com.br/r/not-a-uuid"),
+      { params: Promise.resolve({ productId: "not-a-uuid" }) },
+    );
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("location")).toBe("https://shopee.com.br/");
+    expect(getPublicAffiliateProductById).not.toHaveBeenCalled();
   });
 
   it("uses a safe fallback when the product is not public", async () => {

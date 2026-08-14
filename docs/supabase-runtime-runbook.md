@@ -5,7 +5,9 @@
 `public.products` e a fonte oficial do catalogo da `affiliate-vitrine`.
 O `my-collection-page` esta fora deste fluxo. O backend do `AFILIADO-SHOPEE`
 faz operacoes administrativas server-side; a `affiliate-vitrine` faz leitura
-publica protegida por RLS.
+publica com anon key, filtros de publicacao e RPCs endurecidas. A leitura direta
+da tabela continua protegida por RLS; as RPCs `SECURITY DEFINER` sao uma
+fronteira privilegiada separada e devem ser auditadas no diagnostico.
 
 ## Matriz de credenciais
 
@@ -23,7 +25,7 @@ browser, em logs ou em respostas HTTP.
 
 ## Regra de leitura publica
 
-A policy publica permite somente linhas que atendam simultaneamente:
+A policy publica e as RPCs publicas devem permitir somente linhas que atendam simultaneamente:
 
 - `is_active = true`;
 - `classification_review_status = 'auto'`;
@@ -46,7 +48,7 @@ do banco.
 
 ## Revisao da migration
 
-Arquivo: `supabase/migrations/20260812010000_harden_affiliate_products_public_read.sql`.
+Arquivo canonico pendente: `supabase/migrations/20260813000000_add_affiliate_catalog_search_and_public_access.sql`.
 
 Antes de aplicar:
 
@@ -63,9 +65,11 @@ falhar. Nao crie uma policy paralela sem primeiro auditar todas as policies de
 O script tambem falha quando encontra outra policy de `SELECT` em
 `public.products`.
 
-A migration da Fase 1C foi aplicada manualmente e validada no Supabase. O arquivo
-continua sendo a referencia revisavel; nao o reexecute sem auditar o estado atual
-das policies e obter autorizacao explicita.
+A migration da Fase 1C foi aplicada manualmente e validada no Supabase. A
+migration de catalogo desta fase foi aplicada manualmente apos o diagnostico
+pre-migration e autorizacao explicita. O diagnostico pos-migration confirmou a
+coluna gerada, os quatro indices, as tres RPCs, os grants e a preservacao dos
+157 produtos.
 
 ## Operacoes administrativas
 
@@ -97,9 +101,12 @@ Toda consulta aplica os filtros de publicacao, mesmo com a RLS ativa:
 - `leaf_slug IS NOT NULL`.
 
 Filtros de departamento e folha usam somente os slugs canonicos. Um par
-departamento/folha invalido e rejeitado antes da consulta. A selecao de
-colunas e explicita e nao inclui `ai_copy`, `embedding` ou campos
-administrativos desnecessarios.
+departamento/folha invalido e rejeitado antes da consulta. Listagem, busca e
+detalhe usam RPCs de retorno explicito; os grants diretos da tabela nao incluem
+`ai_copy`, `embedding`, `sales`, `shopee_affiliate_link` ou campos de
+classificacao. O card usa somente
+`PublicAffiliateProductCardData`; o contrato completo fica restrito ao PDP e
+ao redirect server-only.
 
 Depois da resposta do Supabase, a camada valida o formato da linha e usa o
 mapper do contrato `PublicAffiliateProduct`. Produtos malformados, inativos,
@@ -113,8 +120,11 @@ service role.
 
 A listagem usa paginacao keyset com cursor opaco, ordenada por
 `created_at DESC, id ASC`, e consulta 24 itens mais uma linha para detectar a
-proxima pagina. O botao "Carregar mais" e um link de navegacao progressiva
-server-only; nao ha Server Action nem consulta ao abrir o sheet. A busca usa a RPC de full-text search com
+proxima pagina. Uma janela de ate 10 lotes pede no maximo 241 linhas por
+consulta server-only; linhas invalidas podem acionar refill limitado por cursor,
+sem ultrapassar o teto interno. O limite nunca vem diretamente da URL. O botao
+"Carregar mais" e um link de navegacao progressiva server-only; nao ha Server
+Action nem consulta ao abrir o sheet. A busca usa a RPC de full-text search com
 `title` em peso maior e `ai_copy` em peso menor. `ai_copy` nunca e selecionado
 nem enviado para os cards.
 
@@ -134,15 +144,19 @@ escrita no Supabase.
 ## Migration de performance e diagnostico
 
 Antes de aplicar a migration de performance, executar manualmente o diagnostico
-somente-leitura em `supabase/diagnostics/20260813_catalog_readonly_verification.sql`.
-Ele deve confirmar indices existentes, hosts de imagem/links e planos
-`EXPLAIN (ANALYZE, BUFFERS)` para folha, departamento e busca.
+somente-leitura em `supabase/diagnostics/20260813_catalog_pre_migration_readonly.sql`.
+Depois da aplicacao autorizada, executar
+`supabase/diagnostics/20260813_catalog_post_migration_readonly.sql` para
+confirmar a coluna gerada, grants, RPCs, hosts e planos `EXPLAIN`.
 
-A migration revisavel e
-`supabase/migrations/20260813000000_add_affiliate_catalog_search_and_indexes.sql`.
-Ela cria indices parciais e a coluna `search_document`/RPC de busca, mas nao foi
-aplicada. Nao executar DDL pelo app e nao aplicar o arquivo sem revisao humana,
-resultado favoravel do diagnostico e autorizacao explicita.
+A migration aplicada e versionada localmente e
+`supabase/migrations/20260813000000_add_affiliate_catalog_search_and_public_access.sql`.
+Ela cria indices parciais, `search_document`, RPCs de listagem/busca/detalhe e
+grants minimos em uma unidade revisavel. As RPCs usam `CREATE OR REPLACE`, sem
+`DROP FUNCTION`; uma assinatura
+ou retorno incompatível faz a migration abortar. Nao executar DDL pelo app e
+qualquer nova alteracao deve ser criada em migration aditiva separada e
+revisada antes de aplicacao manual. Nao executar DDL pelo app.
 
 Checklist de performance:
 
@@ -154,22 +168,22 @@ Checklist de performance:
 - definir a politica de cache e revalidacao do Next antes de conectar a UI;
 - manter o carregamento da listagem no servidor, sem fetch client-side para a
   consulta inicial;
-- criar estado `loading` para a troca de folha, evitando uma interface sem
-  feedback enquanto a nova listagem e carregada;
+- manter `loading.tsx` e `error.tsx` nos segmentos de departamento, folha, busca
+  e PDP, evitando uma interface sem feedback durante a navegacao;
 - manter o sheet e a taxonomia local instantaneos, sem consulta ao Supabase ao
   abrir o menu;
 - manter a paginacao keyset de 24 itens e o cursor composto;
 - manter cache e revalidacao alinhados ao perfil `affiliateCatalog`;
 - confirmar que o sheet nao dispara consulta ao Supabase.
 
-Depois da migration de busca/indexes, a migration
-`supabase/migrations/20260813010000_restrict_public_product_columns.sql`
-remove o SELECT amplo de `anon`/`authenticated` e concede somente colunas de
-catalogo. `ai_copy`, `embedding`, `sales` e o link afiliado nao sao acessiveis
-por SELECT direto na tabela. A RPC de busca e a RPC de detalhe possuem
-`SECURITY DEFINER`, `search_path` explicito, filtros de publicacao e grants de
-execute limitados. Ambas as migrations continuam pendentes de aplicacao manual
-e revisao humana.
+Essa migration remove o SELECT amplo de `PUBLIC`, `anon` e `authenticated` e
+concede somente colunas de catalogo. `ai_copy`, `embedding`, `sales`, o link
+afiliado e os campos de classificacao nao sao acessiveis por SELECT direto na
+tabela. As tres RPCs possuem `SECURITY DEFINER` somente porque precisam aplicar
+o filtro de publicacao sobre colunas protegidas, usam `search_path` restrito a
+`pg_catalog`, SQL estatico, retorno explicito e grants de execute limitados a
+`anon` e `authenticated`. O diagnostico pos-migration confirmou owner
+confiavel, limites e configuracao efetiva das funcoes.
 
 O redirect usa `SUPABASE_CLICK_KEY` somente para `record_click`. O tracking e
 fail-open e falhas retornadas pelo Supabase sao registradas sem chaves,

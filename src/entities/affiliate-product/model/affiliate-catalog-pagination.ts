@@ -1,7 +1,14 @@
 import type { DepartmentSlug, LeafSlug } from "@/shared/config/affiliate-taxonomy";
 
+import { isSupportedUuid } from "./public-product-validation";
+
 export const PUBLIC_AFFILIATE_CATALOG_PAGE_SIZE = 24;
 export const PUBLIC_AFFILIATE_MAX_PROGRESSIVE_PAGES = 10;
+export const PUBLIC_AFFILIATE_CATALOG_MAX_WINDOW_SIZE =
+  PUBLIC_AFFILIATE_CATALOG_PAGE_SIZE * PUBLIC_AFFILIATE_MAX_PROGRESSIVE_PAGES;
+export const PUBLIC_AFFILIATE_CATALOG_MAX_QUERY_LIMIT =
+  PUBLIC_AFFILIATE_CATALOG_MAX_WINDOW_SIZE + 1;
+export const PUBLIC_AFFILIATE_CATALOG_MAX_REFILL_ATTEMPTS = 4;
 const MAX_CURSOR_LENGTH = 512;
 
 export type PublicAffiliateCatalogFilters = {
@@ -29,13 +36,6 @@ export type PublicAffiliateProductCursor = {
   readonly createdAt: string;
   readonly id: string;
 };
-
-function isUuid(value: unknown): value is string {
-  return (
-    typeof value === "string" &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
-  );
-}
 
 export function normalizePublicCatalogPageNumber(value: unknown): number {
   if (value === undefined) return 1;
@@ -69,7 +69,7 @@ export function normalizePublicCatalogPageSize(value: unknown): number {
 export function encodePublicAffiliateProductCursor(
   cursor: PublicAffiliateProductCursor,
 ): string {
-  if (!isValidDate(cursor.createdAt) || !isUuid(cursor.id)) {
+  if (!isValidDate(cursor.createdAt) || !isSupportedUuid(cursor.id)) {
     throw new Error("Cannot encode an invalid public catalog cursor.");
   }
 
@@ -90,7 +90,7 @@ export function decodePublicAffiliateProductCursor(
     }
 
     const candidate = decoded as Record<string, unknown>;
-    if (!isValidDate(candidate.createdAt) || !isUuid(candidate.id)) {
+    if (!isValidDate(candidate.createdAt) || !isSupportedUuid(candidate.id)) {
       return null;
     }
 

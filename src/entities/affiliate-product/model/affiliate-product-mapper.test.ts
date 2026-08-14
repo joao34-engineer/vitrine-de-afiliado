@@ -9,12 +9,12 @@ import type { SupabaseProductRow } from "@/types/supabase";
 
 function row(overrides: Partial<SupabaseProductRow> = {}): SupabaseProductRow {
   return {
-    id: "uuid-1",
+    id: "550e8400-e29b-41d4-a716-446655440000",
     product_id_shopee: "123.456",
     title: "Fone Bluetooth",
     price_original: 129.9,
     price_discount: 99.9,
-    image_url: "https://cdn.example.com/fone.jpg",
+    image_url: "https://cf.shopee.com.br/file/fone.jpg",
     shopee_affiliate_link: "https://shopee.com.br/product/123",
     ai_copy: null,
     category: "Eletronicos",
@@ -42,7 +42,7 @@ describe("Supabase product mapper", () => {
     const product = mapSupabaseProductRowToPublicAffiliateProduct(row());
 
     expect(product).toMatchObject({
-      id: "uuid-1",
+      id: "550e8400-e29b-41d4-a716-446655440000",
       slug: "shopee-123-456",
       marketplace: "shopee",
       affiliateUrl: "https://shopee.com.br/product/123",
@@ -51,7 +51,6 @@ describe("Supabase product mapper", () => {
       departmentSlug: "tech",
       subcategorySlug: "audio",
       leafSlug: "audio",
-      classificationReviewStatus: "auto",
     });
   });
 
@@ -72,6 +71,27 @@ describe("Supabase product mapper", () => {
     expect(
       mapSupabaseProductRowToPublicAffiliateProduct(
         row({ shopee_affiliate_link: "not-a-url" }),
+      ),
+    ).toBeNull();
+  });
+
+  it("rejects invalid public image hosts and negative prices", () => {
+    expect(
+      mapSupabaseProductRowToPublicAffiliateProduct(
+        row({ image_url: "https://cdn.example.com/fone.jpg" }),
+      ),
+    ).toBeNull();
+    expect(
+      mapSupabaseProductRowToPublicAffiliateProduct(
+        row({ price_discount: -1 }),
+      ),
+    ).toBeNull();
+  });
+
+  it("rejects rows without a valid catalog timestamp", () => {
+    expect(
+      mapSupabaseProductRowToPublicAffiliateProduct(
+        row({ created_at: "not-a-date" }),
       ),
     ).toBeNull();
   });

@@ -14,6 +14,7 @@ export {
 export {
   deriveAffiliateProductSlug,
   mapSupabasePublicProductRowToCard,
+  mapSupabasePublicAffiliateProductDetailRow,
   mapSupabaseProductRowToPublishableAffiliateProduct,
   mapSupabaseProductRowToPublicAffiliateProduct,
 } from "./model/affiliate-product-mapper";
@@ -23,6 +24,14 @@ export {
   getMarketplaceLabel,
 } from "./model/affiliate-product-presentation";
 export { isAllowedAffiliateDestination } from "./model/affiliate-destination";
+export {
+  isHttpsUrl,
+  isNonEmptyString,
+  isNonNegativeFiniteNumber,
+  isPublicCatalogImageUrl,
+  isSupportedUuid,
+  PUBLIC_CATALOG_IMAGE_HOST,
+} from "./model/public-product-validation";
 export { AffiliateProductCard } from "./ui/affiliate-product-card";
 export {
   classifyLegacyAffiliateProduct,

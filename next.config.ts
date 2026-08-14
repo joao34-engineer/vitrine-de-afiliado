@@ -11,9 +11,7 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "**.susercontent.com" },
-      { protocol: "https", hostname: "**.shopee.com.br" },
-      { protocol: "https", hostname: "**.shopeesz.com" },
+      { protocol: "https", hostname: "cf.shopee.com.br" },
     ],
   },
 };

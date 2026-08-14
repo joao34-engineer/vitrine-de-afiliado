@@ -4,7 +4,8 @@ Supabase sera o SoT da vitrine afiliada. O schema completo fica para fase poster
 
 Na Fase 1C, os consumidores oficiais sao:
 
-- `affiliate-vitrine`: leitura publica server-only do catalogo com anon/publishable key e RLS.
+- `affiliate-vitrine`: leitura publica server-only do catalogo com anon/publishable key,
+  filtros publicos e RPCs endurecidas. A leitura direta da tabela continua sob RLS.
 - `AFILIADO-SHOPEE/backend`: leitura administrativa e atualizacao de classificacao
   com service role server-side.
 
@@ -21,6 +22,14 @@ O `my-collection-page` nao faz parte deste fluxo.
 - Nunca expor `SUPABASE_SERVICE_ROLE_KEY` no client.
 - O cliente de `record_click` continua isolado e nao pode ser reutilizado para produtos.
 - A leitura publica exige produto ativo, status `auto` e taxonomia completa.
+- A leitura de catalogo usa RPCs publicas com retorno fixo; grants diretos da
+  tabela nao liberam campos internos ou de classificacao.
+- Toda RPC publica precisa revogar `EXECUTE` de `PUBLIC`, usar SQL estatico,
+  `search_path` seguro, owner confiavel e validar limites/cursores. RPCs
+  `SECURITY DEFINER` devem ficar limitadas a retorno fixo e campos publicos,
+  com diagnostico pos-migration de grants, owner e configuracao. Elas sao uma
+  fronteira privilegiada intencional e nao devem ser descritas como se RLS
+  fosse aplicada automaticamente dentro do corpo da funcao.
 - Operacoes administrativas de produto devem atualizar somente os campos de classificacao.
 - Tipos do Supabase devem ser gerados e versionados quando o schema existir.
 

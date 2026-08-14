@@ -39,11 +39,18 @@ affiliate-vitrine/
 - Nao criar entity/feature por antecipacao; paginas podem manter codigo local ate existir reuso real.
 - `src/shared` nao recebe regra de negocio.
 
-## Rotas Alvo
+## Rotas Publicas Implementadas na Fase 2
 
 - `/`
+- `/departamento/[departmentSlug]`
 - `/folha/[leafSlug]`
 - `/p/[slug]`
-- `/r/[code]`
+- `/r/[productId]`
+- `/buscar?q=`
+- `/como-funciona`
+- `/transparencia`
 
-Essas rotas serao implementadas nas fases seguintes. Nesta fundacao, o objetivo e deixar a estrutura e os contratos documentados.
+As rotas publicas do catalogo foram implementadas na Fase 2 com leitura
+server-only, RPCs de retorno explicito, paginacao keyset e validacao runtime.
+As fases seguintes podem evoluir ingestao e operacao administrativa sem mover a
+fonte oficial de `public.products`.

@@ -14,6 +14,7 @@ import {
   decodePublicAffiliateProductCursor,
   encodePublicAffiliateProductCursor,
   normalizePublicCatalogPageSize,
+  type PublicAffiliateProductCursor,
   type PublicAffiliateCatalogPage,
 } from "../model/affiliate-catalog-pagination";
 import { mapSupabasePublicProductRowToCard } from "../model/affiliate-product-mapper";
@@ -21,7 +22,15 @@ import { isSupabasePublicProductRow } from "../model/public-affiliate-product-ro
 import type { PublicAffiliateProductCardData } from "../model/affiliate-product";
 import type { SupabasePublicProductRow } from "@/types/supabase";
 import { PublicAffiliateProductCatalogError } from "../model/public-affiliate-product-catalog-error";
-import { PUBLIC_AFFILIATE_PRODUCT_CATALOG_SELECT } from "../model/public-affiliate-product-select";
+import { isSupportedUuid } from "../model/public-product-validation";
+import {
+  PUBLIC_AFFILIATE_CATALOG_PAGE_SIZE,
+  PUBLIC_AFFILIATE_CATALOG_MAX_REFILL_ATTEMPTS,
+  PUBLIC_AFFILIATE_CATALOG_MAX_WINDOW_SIZE,
+  PUBLIC_AFFILIATE_CATALOG_MAX_QUERY_LIMIT,
+  normalizePublicCatalogPageNumber,
+  type PublicAffiliateCatalogProgressivePage,
+} from "../model/affiliate-catalog-pagination";
 
 export type PublicAffiliateProductPageFilters = {
   readonly departmentSlug?: DepartmentSlug;
@@ -78,8 +87,25 @@ function asUnknownArray(value: unknown): readonly unknown[] | null {
   return Array.isArray(value) ? value : null;
 }
 
-function hasCursorableCreatedAt(row: SupabasePublicProductRow): boolean {
-  return row.created_at !== null && Number.isFinite(Date.parse(row.created_at));
+function getCursorableRow(value: unknown): PublicAffiliateProductCursor | null {
+  if (typeof value !== "object" || value === null) return null;
+  const row = value as Record<string, unknown>;
+  if (
+    !isSupportedUuid(row.id) ||
+    typeof row.created_at !== "string" ||
+    !Number.isFinite(Date.parse(row.created_at))
+  ) {
+    return null;
+  }
+
+  try {
+    return {
+      createdAt: new Date(row.created_at).toISOString(),
+      id: row.id,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function getCursor(filters: PublicAffiliateProductPageFilters) {
@@ -116,68 +142,93 @@ async function listPublicAffiliateProductPageCached(
       : `affiliate-catalog:leaf:${filters.leafSlug}`,
   );
 
-  let query = createPublicSupabaseClient()
-    .from("products")
-    .select(PUBLIC_AFFILIATE_PRODUCT_CATALOG_SELECT)
-    .eq("is_active", true)
-    .eq("classification_review_status", "auto")
-    .not("department_slug", "is", null)
-    .not("leaf_slug", "is", null)
-    .not("created_at", "is", null);
+  const client = createPublicSupabaseClient();
+  const validRows: SupabasePublicProductRow[] = [];
+  let cursor = filters.cursor;
+  let sawRows = false;
+  let exhausted = false;
+  let attempts = 0;
 
-  if (filters.departmentSlug !== undefined) {
-    query = query.eq("department_slug", filters.departmentSlug);
-  }
-
-  if (filters.leafSlug !== undefined) {
-    query = query.eq("leaf_slug", filters.leafSlug);
-  }
-
-  if (filters.cursor !== undefined && filters.cursor !== null) {
-    query = query.or(
-      `created_at.lt.${filters.cursor.createdAt},and(created_at.eq.${filters.cursor.createdAt},id.gt.${filters.cursor.id})`,
+  while (
+    validRows.length < filters.pageSize + 1 &&
+    !exhausted &&
+    attempts < PUBLIC_AFFILIATE_CATALOG_MAX_REFILL_ATTEMPTS
+  ) {
+    const requestedLimit = Math.min(
+      filters.pageSize + 1 - validRows.length,
+      PUBLIC_AFFILIATE_CATALOG_MAX_QUERY_LIMIT,
     );
+    const { data, error } = await client.rpc("list_public_affiliate_products", {
+      p_department_slug: filters.departmentSlug ?? null,
+      p_leaf_slug: filters.leafSlug ?? null,
+      p_limit: requestedLimit,
+      p_cursor_created_at: cursor?.createdAt ?? null,
+      p_cursor_id: cursor?.id ?? null,
+    });
+    attempts += 1;
+
+    if (error) {
+      throw new PublicAffiliateProductCatalogError(
+        "query-failed",
+        "Failed to load public affiliate products.",
+        { cause: error },
+      );
+    }
+
+    const rows = asUnknownArray(data);
+    if (rows === null) {
+      throw new PublicAffiliateProductCatalogError(
+        "invalid-response",
+        "Supabase returned an invalid public product response.",
+      );
+    }
+    sawRows ||= rows.length > 0;
+
+    for (const row of rows) {
+      if (isSupabasePublicProductRow(row) && mapSupabasePublicProductRowToCard(row) !== null) {
+        validRows.push(row);
+      }
+    }
+
+    const lastRawCursor = rows.length === 0 ? null : getCursorableRow(rows[rows.length - 1]);
+    if (rows.length < requestedLimit) {
+      exhausted = true;
+    } else if (lastRawCursor === null) {
+      throw new PublicAffiliateProductCatalogError(
+        "invalid-response",
+        "Supabase returned a row without a valid pagination cursor.",
+      );
+    } else {
+      cursor = lastRawCursor;
+    }
   }
 
-  const { data, error } = await query
-    .order("created_at", { ascending: false, nullsFirst: false })
-    .order("id", { ascending: true })
-    .limit(filters.pageSize + 1);
-
-  if (error) {
-    throw new PublicAffiliateProductCatalogError(
-      "query-failed",
-      "Failed to load public affiliate products.",
-      { cause: error },
-    );
-  }
-
-  const rows = asUnknownArray(data);
-  if (rows === null) {
+  if (
+    validRows.length < filters.pageSize + 1 &&
+    !exhausted &&
+    attempts >= PUBLIC_AFFILIATE_CATALOG_MAX_REFILL_ATTEMPTS
+  ) {
     throw new PublicAffiliateProductCatalogError(
       "invalid-response",
-      "Supabase returned an invalid public product response.",
+      "Public catalog returned too many invalid rows to build a reliable page.",
     );
   }
 
-  const hasNextPage = rows.length > filters.pageSize;
-  const validRows = rows
-    .filter(isSupabasePublicProductRow)
-    .filter(hasCursorableCreatedAt);
+  const hasNextPage = validRows.length > filters.pageSize;
   const items = validRows
     .slice(0, filters.pageSize)
     .map(mapSupabasePublicProductRowToCard)
     .filter((product): product is PublicAffiliateProductCardData => product !== null);
 
-  if (rows.length > 0 && items.length === 0) {
+  if (sawRows && items.length === 0) {
     throw new PublicAffiliateProductCatalogError(
       "invalid-response",
       "Supabase returned no valid public affiliate products.",
     );
   }
 
-  const lastRow = validRows[Math.min(filters.pageSize, validRows.length) - 1];
-  const nextCursor = hasNextPage && lastRow?.created_at !== null && lastRow !== undefined
+  const lastRow = validRows[filters.pageSize - 1];
+  const nextCursor = hasNextPage && lastRow !== undefined && lastRow.created_at !== null
     ? encodePublicAffiliateProductCursor({ createdAt: lastRow.created_at, id: lastRow.id })
     : null;
 
@@ -185,5 +236,58 @@ async function listPublicAffiliateProductPageCached(
     items,
     hasNextPage: nextCursor !== null,
     nextCursor,
+  };
+}
+
+export type PublicAffiliateProductProgressiveFilters = Omit<PublicAffiliateProductPageFilters, "cursor" | "pageSize"> & {
+  readonly pageNumber?: unknown;
+  readonly startingCursor?: string;
+};
+
+export async function listPublicAffiliateProductWindow(
+  filters: PublicAffiliateProductProgressiveFilters = {},
+): Promise<PublicAffiliateCatalogProgressivePage<PublicAffiliateProductCardData>> {
+  let pageNumber: number;
+  try {
+    pageNumber = normalizePublicCatalogPageNumber(filters.pageNumber);
+  } catch (error) {
+    throw new PublicAffiliateProductCatalogError(
+      "invalid-filter",
+      error instanceof Error ? error.message : "Invalid catalog page number.",
+      { cause: error },
+    );
+  }
+
+  const startingCursor = filters.startingCursor ?? null;
+  const cursor = startingCursor === null
+    ? null
+    : decodePublicAffiliateProductCursor(startingCursor);
+  if (startingCursor !== null && cursor === null) {
+    throw new PublicAffiliateProductCatalogError("invalid-filter", "Invalid catalog starting cursor.");
+  }
+
+  const pageSize = Math.min(
+    pageNumber * PUBLIC_AFFILIATE_CATALOG_PAGE_SIZE,
+    PUBLIC_AFFILIATE_CATALOG_MAX_WINDOW_SIZE,
+  );
+  validateFilters({
+    departmentSlug: filters.departmentSlug,
+    leafSlug: filters.leafSlug,
+    cursor: startingCursor ?? undefined,
+    pageSize: PUBLIC_AFFILIATE_CATALOG_PAGE_SIZE,
+  });
+  const page = await listPublicAffiliateProductPageCached({
+    departmentSlug: filters.departmentSlug,
+    leafSlug: filters.leafSlug,
+    pageSize,
+    cursor,
+  });
+
+  return {
+    items: page.items,
+    nextCursor: page.nextCursor,
+    hasNextPage: page.hasNextPage,
+    pageNumber,
+    startingCursor,
   };
 }

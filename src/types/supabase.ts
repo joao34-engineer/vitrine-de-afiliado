@@ -43,9 +43,6 @@ export type SupabasePublicProductRow = Pick<
   | "department_slug"
   | "subcategory_slug"
   | "leaf_slug"
-  | "classification_source"
-  | "classification_confidence"
-  | "classification_review_status"
 >;
 
 export type SupabasePublicAffiliateProductDetailRow = SupabasePublicProductRow &
@@ -76,6 +73,16 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      list_public_affiliate_products: {
+        Args: {
+          p_cursor_created_at?: string | null;
+          p_cursor_id?: string | null;
+          p_department_slug?: string | null;
+          p_leaf_slug?: string | null;
+          p_limit?: number;
+        };
+        Returns: SupabasePublicProductRow[];
+      };
       search_public_affiliate_products: {
         Args: {
           p_cursor_created_at?: string | null;

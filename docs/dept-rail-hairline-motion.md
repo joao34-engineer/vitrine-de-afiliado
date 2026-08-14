@@ -1,8 +1,8 @@
 # Dept Rail Hairline Motion
 
-Este documento mapeia o padrao de linha horizontal animada sob o department
-rail que ja existe no `my-collection-page` e define como ele deve ser
-replicado depois na `affiliate-vitrine`.
+Este documento registra o padrao de linha horizontal animada sob o department
+rail implementado na `affiliate-vitrine`, usando a referencia visual do
+`my-collection-page` sem importar seus contratos de loja.
 
 ## Objetivo
 
@@ -98,7 +98,7 @@ gsap.to(line, {
 
 ## Estrutura recomendada na affiliate-vitrine
 
-Quando implementar, criar:
+Implementacao atual:
 
 ```text
 src/shared/lib/gsap-client.ts
@@ -123,7 +123,7 @@ O divider nao deve fazer parte do public API da feature se for detalhe interno.
 Hoje a `affiliate-vitrine` possui `gsap` e `@gsap/react` no `package.json`;
 esta fase deve usar essas dependencias somente no divider client-only.
 
-Na fase de implementacao, adicionar de forma explicita:
+Dependencias usadas:
 
 - `gsap`
 - `@gsap/react`
@@ -140,13 +140,11 @@ Adicionar tokens equivalentes aos do `my-collection-page`:
 
 ```css
 :root {
-  --dept-rail-bg: var(--background);
-  --dept-divider: var(--border);
+  --dept-divider: var(--divider);
 }
 
 html.dark {
-  --dept-rail-bg: var(--background);
-  --dept-divider: var(--border);
+  --dept-divider: var(--divider);
 }
 ```
 
@@ -158,12 +156,12 @@ html.dark {
 }
 ```
 
-Classes esperadas no divider:
+Classe atual do divider:
 
 ```tsx
 <div
   aria-hidden
-  className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-dept-divider will-change-transform"
+  className="department-hairline"
 />
 ```
 
