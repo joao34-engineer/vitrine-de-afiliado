@@ -16,7 +16,7 @@ begin
       on namespaces.oid = procedures.pronamespace
     where namespaces.nspname = 'public'
       and procedures.proname = 'get_public_affiliate_product'
-      and pg_catalog.pg_get_function_identity_arguments(procedures.oid) = 'uuid'
+      and pg_catalog.pg_get_function_identity_arguments(procedures.oid) = 'p_product_id uuid'
   ) then
     raise exception 'Preflight failed: public.get_public_affiliate_product(uuid) does not exist.';
   end if;
@@ -28,7 +28,7 @@ begin
     on namespaces.oid = procedures.pronamespace
   where namespaces.nspname = 'public'
     and procedures.proname = 'get_public_affiliate_product'
-    and pg_catalog.pg_get_function_identity_arguments(procedures.oid) = 'uuid';
+    and pg_catalog.pg_get_function_identity_arguments(procedures.oid) = 'p_product_id uuid';
 
   if pg_catalog.regexp_replace(pg_catalog.lower(result_definition), '\s+', '', 'g') <>
      pg_catalog.regexp_replace(

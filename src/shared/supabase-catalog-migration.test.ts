@@ -73,7 +73,15 @@ describe("affiliate ingestion migration contract", () => {
   it("preflights schema and keeps administrative RPCs out of public roles", () => {
     expect(adminMigration).toMatch(/pg_get_constraintdef/i);
     expect(adminMigration).toMatch(/pg_get_indexdef/i);
+    expect(adminMigration).toMatch(/pg_catalog\.strpos/i);
+    expect(adminMigration).not.toMatch(/pg_catalog\.position/i);
+    expect(adminMigration).not.toMatch(/pg_catalog\.coalesce/i);
     expect(adminMigration).toMatch(/information_schema\.columns/i);
+    expect(adminMigration).toMatch(/information_schema\.columns\.udt_name/i);
+    expect(adminMigration).toMatch(/'_text'/i);
+    expect(adminMigration).toMatch(/has_table_privilege\('anon'/i);
+    expect(adminMigration).toMatch(/broad SELECT grant/i);
+    expect(adminMigration).toMatch(/p_subcategory_slug is not null and pg_catalog\.btrim\(p_subcategory_slug\) = ''/i);
     expect(adminMigration).toMatch(/classification_review_status = 'review'/i);
     expect(adminMigration).toMatch(/classification_review_status = 'auto'/i);
     expect(adminMigration).toMatch(/from public, anon, authenticated/i);
@@ -84,6 +92,7 @@ describe("affiliate ingestion migration contract", () => {
     expect(destinationMigration).toMatch(/begin;/i);
     expect(destinationMigration).toMatch(/commit;/i);
     expect(destinationMigration).toMatch(/create or replace function public\.get_public_affiliate_product/i);
+    expect(destinationMigration).toMatch(/pg_get_function_identity_arguments\(procedures\.oid\) = 'p_product_id uuid'/i);
     expect(destinationMigration).toMatch(/br\[\.\]shp\[\.\]ee/i);
     expect(destinationMigration).not.toMatch(/shopeesz/i);
     expect(destinationMigration).not.toMatch(/drop\s+(function|table|column)/i);

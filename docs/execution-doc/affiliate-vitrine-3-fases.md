@@ -208,6 +208,8 @@ interface; ela continua somente leitura e server-only.
    classificador, confianca e motivo do conflito.
 3. O operador escolhe uma folha da taxonomia canonica em uma lista agrupada por
    departamento. A escolha nao sera texto livre.
+   O console tambem pode filtrar a fila carregada por departamento e por folha;
+   esses filtros sao visuais e nao alteram o contrato da API.
 4. O backend valida o `leaf_slug` e deriva `department_slug` e
    `subcategory_slug` pela taxonomia oficial.
 5. A aprovacao atualiza somente os campos de classificacao e muda o status para

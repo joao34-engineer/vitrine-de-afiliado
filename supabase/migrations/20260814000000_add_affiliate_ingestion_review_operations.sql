@@ -66,8 +66,9 @@ begin
       on index_relations.oid = indexes.indexrelid
     where indexes.indrelid = 'public.products'::regclass
       and indexes.indisunique = true
-      and pg_catalog.position(
-        '(product_id_shopee)' in pg_catalog.pg_get_indexdef(indexes.indexrelid)
+      and pg_catalog.strpos(
+        pg_catalog.pg_get_indexdef(indexes.indexrelid),
+        '(product_id_shopee)'
       ) > 0
   ) then
     raise exception 'Preflight failed: products.product_id_shopee must have a unique constraint or index.';
@@ -83,17 +84,17 @@ begin
     select * from (values
       (
         'upsert_affiliate_product_ingestion'::name,
-        'text, text, numeric, numeric, text, text, text, text, text, text, text, text, numeric, text, text, text, text, text[]'::text,
+        'p_product_id_shopee text, p_title text, p_price_original numeric, p_price_discount numeric, p_image_url text, p_shopee_affiliate_link text, p_ai_copy text, p_category text, p_department_slug text, p_subcategory_slug text, p_leaf_slug text, p_classification_source text, p_classification_confidence numeric, p_classification_review_status text, p_suggested_department_slug text, p_suggested_subcategory_slug text, p_suggested_leaf_slug text, p_classification_reasons text[]'::text,
         'TABLE(id uuid, product_id_shopee text, previous_public_eligible boolean, public_eligible boolean, classification_review_status text, classification_revision bigint, changed boolean, created boolean)'::text
       ),
       (
         'approve_affiliate_product_classification'::name,
-        'uuid, text, text, text, bigint, uuid'::text,
+        'p_product_id uuid, p_department_slug text, p_subcategory_slug text, p_leaf_slug text, p_expected_revision bigint, p_operation_id uuid'::text,
         'TABLE(id uuid, public_eligible boolean, classification_revision bigint, changed boolean)'::text
       ),
       (
         'deactivate_affiliate_product'::name,
-        'uuid, bigint, uuid'::text,
+        'p_product_id uuid, p_expected_revision bigint, p_operation_id uuid'::text,
         'TABLE(id uuid, public_eligible boolean, classification_revision bigint, changed boolean)'::text
       )
     ) as routines(name, identity_arguments, result_definition)
@@ -130,29 +131,54 @@ end
 $$;
 
 do $$
+begin
+  if exists (
+    select 1
+    from pg_catalog.aclexplode(
+      coalesce(
+        (select relacl from pg_catalog.pg_class where oid = 'public.products'::regclass),
+        pg_catalog.acldefault(
+          'r',
+          (select relowner from pg_catalog.pg_class where oid = 'public.products'::regclass)
+        )
+      )
+    ) as privileges
+    where privileges.grantee = 0
+      and privileges.privilege_type = 'SELECT'
+  )
+  or has_table_privilege('anon', 'public.products', 'SELECT')
+  or has_table_privilege('authenticated', 'public.products', 'SELECT') then
+    raise exception 'Preflight failed: public.products has a broad SELECT grant for public, anon, or authenticated.';
+  end if;
+end
+$$;
+
+do $$
 declare
   expected record;
   actual_type text;
+  actual_udt text;
   actual_nullable text;
   actual_default text;
 begin
   for expected in
     select * from (values
-      ('classification_suggested_department_slug'::text, 'text'::text, 'YES'::text, null::text),
-      ('classification_suggested_subcategory_slug'::text, 'text'::text, 'YES'::text, null::text),
-      ('classification_suggested_leaf_slug'::text, 'text'::text, 'YES'::text, null::text),
-      ('classification_reasons'::text, 'ARRAY'::text, 'YES'::text, null::text),
-      ('classification_revision'::text, 'bigint'::text, 'NO'::text, '0'::text),
-      ('classification_updated_at'::text, 'timestamp with time zone'::text, 'YES'::text, null::text),
-      ('classification_reviewed_at'::text, 'timestamp with time zone'::text, 'YES'::text, null::text),
-      ('classification_last_operation_id'::text, 'uuid'::text, 'YES'::text, null::text),
-      ('classification_last_operation_kind'::text, 'text'::text, 'YES'::text, null::text)
-    ) as columns(column_name, data_type, is_nullable, expected_default)
+      ('classification_suggested_department_slug'::text, 'text'::text, 'text'::text, 'YES'::text, null::text),
+      ('classification_suggested_subcategory_slug'::text, 'text'::text, 'text'::text, 'YES'::text, null::text),
+      ('classification_suggested_leaf_slug'::text, 'text'::text, 'text'::text, 'YES'::text, null::text),
+      ('classification_reasons'::text, 'ARRAY'::text, '_text'::text, 'YES'::text, null::text),
+      ('classification_revision'::text, 'bigint'::text, 'int8'::text, 'NO'::text, '0'::text),
+      ('classification_updated_at'::text, 'timestamp with time zone'::text, 'timestamptz'::text, 'YES'::text, null::text),
+      ('classification_reviewed_at'::text, 'timestamp with time zone'::text, 'timestamptz'::text, 'YES'::text, null::text),
+      ('classification_last_operation_id'::text, 'uuid'::text, 'uuid'::text, 'YES'::text, null::text),
+      ('classification_last_operation_kind'::text, 'text'::text, 'text'::text, 'YES'::text, null::text)
+    ) as columns(column_name, data_type, udt_name, is_nullable, expected_default)
   loop
     select information_schema.columns.data_type,
+      information_schema.columns.udt_name,
       information_schema.columns.is_nullable,
       pg_catalog.pg_get_expr(defaults.adbin, defaults.adrelid)
-    into actual_type, actual_nullable, actual_default
+    into actual_type, actual_udt, actual_nullable, actual_default
     from information_schema.columns
     left join pg_catalog.pg_attribute as attributes
       on attributes.attrelid = 'public.products'::regclass
@@ -167,10 +193,11 @@ begin
 
     if actual_type is not null and (
       actual_type <> expected.data_type
+      or actual_udt <> expected.udt_name
       or actual_nullable <> expected.is_nullable
       or (
         expected.expected_default is not null
-        and pg_catalog.regexp_replace(pg_catalog.coalesce(actual_default, ''), '\s+', '', 'g') <> expected.expected_default
+        and pg_catalog.regexp_replace(coalesce(actual_default, ''), '\s+', '', 'g') <> expected.expected_default
       )
     ) then
       raise exception 'Preflight failed: column %.% has incompatible definition.', 'products', expected.column_name;
@@ -699,6 +726,7 @@ begin
     raise exception 'approval operation data is invalid';
   end if;
   if p_department_slug is null or pg_catalog.btrim(p_department_slug) = ''
+     or p_subcategory_slug is not null and pg_catalog.btrim(p_subcategory_slug) = ''
      or p_leaf_slug is null or pg_catalog.btrim(p_leaf_slug) = '' then
     raise exception 'approval taxonomy is incomplete';
   end if;
