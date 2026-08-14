@@ -48,12 +48,23 @@ continua com o chrome existente.
 
 O rail usa scroll horizontal nativo, sem consulta ao Supabase. Home e um link
 direto para `/`. Os demais departamentos abrem o sheet especifico, que mostra
-Todos e as folhas do departamento.
+Todos e as folhas do departamento. Na home o rail fica abaixo da busca; na
+listing ele aparece depois dos controles; na PDP ele fica oculto no mobile.
 
 O botao de menu abre o sheet geral. Nesse sheet, o grupo `Mais` nao aparece
 como uma linha; suas folhas `Papelaria`, `Ferramentas`, `Automotivo` e
-`Achadinhos gerais` entram diretamente na lista. Busca e filtragem do sheet sao
-locais e usam somente a taxonomia em memoria.
+`Achadinhos gerais` entram diretamente na lista, e Home continua como link
+direto. Tocar em outro departamento troca para o painel especifico no mesmo
+sheet. Busca e filtragem do sheet sao locais e usam somente a taxonomia em
+memoria.
+
+O sheet e dividido em um cabecalho estatico e uma `.sheet-scroll-region`.
+Handle, titulo e busca ficam fixos; somente a lista rola com
+`overscroll-behavior: contain`, sem mover a pagina atras. No mobile, arrastar
+para baixo a partir do topo da lista acompanha o dedo e fecha o painel ao
+passar de 25% da altura ou velocidade descendente de `0.6px/ms`. O gesto nao
+comeca em inputs, links ou botoes, e no desktop nao e ativado. Escape e
+backdrop continuam fechando o painel.
 
 ## Home, Listing e PDP
 
@@ -62,8 +73,11 @@ demais produtos formam o grid sem duplicar os itens do hero. Com menos de dois
 produtos, o hero e omitido.
 
 A listing usa busca contextual com os filtros taxonomicos atuais, botao
-Filtros e grid de duas colunas. Carregar mais continua sendo um link normal
-server-only.
+Filtros e grid de duas colunas. Carregar mais e uma fronteira client pequena:
+uma Server Action valida o href, consulta o proximo lote no servidor e o
+navegador apenas acrescenta cards publicos ao grid. O href continua sendo um
+link normal como fallback sem JavaScript; a pagina 10 abre a proxima janela
+por navegacao completa.
 
 A PDP usa a imagem principal, titulo, preco, CTA rastreado, disclosure e no
 maximo dois relacionados da mesma folha. Relacionados sao buscados no servidor,
@@ -78,14 +92,17 @@ foco, `aria-modal` e fundo inerte. Abrir qualquer sheet nao busca catalogo.
 
 ## Hairline
 
-A hairline usa GSAP e ScrollTrigger, com reveal entre `0` e `140px`, `scrub`
-`0.4`, escala inicial `0.92` e origem central. Em reduced motion ela fica
-visivel e estatica, sem listener de scroll ou scrub. O componente e apenas
-feedback visual e nao altera o layout ou a navegacao.
+A hairline usa GSAP e ScrollTrigger, com estado inicial totalmente invisivel
+(`autoAlpha: 0`), reveal entre `0` e `140px`, `scrub` `0.4`, escala inicial
+`0.92` e origem central. Em reduced motion ela fica visivel e estatica, sem
+scrub. Ela e independente dos sublinhados estaticos de cada departamento; a
+cor vem de `--dept-divider`, que acompanha os tokens Light/Dark. O componente
+e apenas feedback visual e nao altera o layout ou a navegacao.
 
 ## Assets e Fronteiras
 
-O logo usado no chrome esta em `public/brand/salvat-brand-seal.jpeg`. Imagens
+O logo usado no chrome esta em `public/brand/salvat-brand-seal.png`, renderizado
+com caixa estavel de `38px` e `object-fit: contain`. Imagens
 de produtos continuam vindo do Supabase e passam por `next/image`; nenhum
 asset de produto ficticio do Figma foi incorporado.
 

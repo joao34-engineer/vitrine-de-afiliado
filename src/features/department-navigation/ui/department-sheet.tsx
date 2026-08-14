@@ -10,27 +10,37 @@ import {
   type DepartmentSlug,
 } from "@/shared/config/affiliate-taxonomy";
 
+import { useBottomSheetDismiss } from "../lib/use-bottom-sheet-dismiss";
 import { useDepartmentNavigation, type DepartmentNavigationPanel } from "./department-navigation-context";
 
 const FOCUSABLE_SELECTOR = "a[href],button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex='-1'])";
 
 type SheetEntry =
-  | { readonly type: "department"; readonly slug: DepartmentSlug; readonly label: string; readonly href: string }
+  | { readonly type: "department"; readonly slug: DepartmentSlug; readonly label: string }
+  | { readonly type: "link"; readonly slug: string; readonly label: string; readonly href: string }
   | { readonly type: "leaf"; readonly slug: string; readonly label: string; readonly href: string };
 
 function getAllSheetEntries(): readonly SheetEntry[] {
-  return listDepartments().flatMap<SheetEntry>((department): readonly SheetEntry[] => {
+  const homeEntry: SheetEntry = { type: "link", slug: "home", label: "Home", href: "/" };
+  const entries = listDepartments().flatMap<SheetEntry>((department): readonly SheetEntry[] => {
     if (department.slug === "mais") {
       return listLeaves()
         .filter((leaf) => leaf.departmentSlug === "mais")
         .map((leaf) => ({ type: "leaf" as const, slug: leaf.slug, label: leaf.label, href: `/folha/${leaf.slug}` }));
     }
 
-    return [{ type: "department" as const, slug: department.slug, label: department.label, href: department.slug === "home" ? "/" : `/departamento/${department.slug}` }];
+    if (department.slug === "home") return [];
+    return [{ type: "department" as const, slug: department.slug, label: department.label }];
   });
+  return [homeEntry, ...entries];
 }
 
-function useSheetAccessibility(sheetRef: React.RefObject<HTMLElement | null>, onClose: () => void, triggerRef: React.RefObject<HTMLButtonElement | null>): void {
+function useSheetAccessibility(
+  sheetRef: React.RefObject<HTMLElement | null>,
+  onClose: () => void,
+  triggerRef: React.RefObject<HTMLButtonElement | null>,
+  panelKey: string,
+): void {
   useEffect(() => {
     const triggerElement = triggerRef.current;
     const backgroundElements = Array.from(document.querySelectorAll<HTMLElement>("[data-sheet-background]"));
@@ -39,9 +49,12 @@ function useSheetAccessibility(sheetRef: React.RefObject<HTMLElement | null>, on
       element.setAttribute("aria-hidden", "true");
     });
 
-    const focusable = sheetRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
-    const initialFocus = sheetRef.current?.querySelector<HTMLElement>('[data-sheet-initial-focus="true"]');
-    (initialFocus ?? focusable?.[0])?.focus();
+    const focusInitial = () => {
+      const initialFocus = sheetRef.current?.querySelector<HTMLElement>('[data-sheet-initial-focus="true"]');
+      const focusable = sheetRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+      (initialFocus ?? focusable)?.focus();
+    };
+    focusInitial();
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -73,19 +86,32 @@ function useSheetAccessibility(sheetRef: React.RefObject<HTMLElement | null>, on
       });
       triggerElement?.focus();
     };
-  }, [onClose, sheetRef, triggerRef]);
+  }, [onClose, panelKey, sheetRef, triggerRef]);
 }
 
 function SheetRow({ href, label, onClose }: Readonly<{ href: string; label: string; onClose: () => void }>): React.JSX.Element {
+  return <Link href={href} className="sheet-leaf" onClick={onClose}><span>{label}</span><span aria-hidden="true">›</span></Link>;
+}
+
+function SheetSearch({ label, placeholder, query, onQueryChange }: Readonly<{
+  label: string;
+  placeholder: string;
+  query: string;
+  onQueryChange: (value: string) => void;
+}>): React.JSX.Element {
   return (
-    <Link href={href} className="sheet-leaf" onClick={onClose}>
-      <span>{label}</span>
-      <span aria-hidden="true">›</span>
-    </Link>
+    <label className="sheet-search">
+      <span aria-hidden="true" className="sheet-search-icon">⌕</span>
+      <span className="sr-only">{label}</span>
+      <input data-sheet-initial-focus="true" value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder={placeholder} />
+    </label>
   );
 }
 
-function AllDepartmentsSheet({ onClose }: Readonly<{ onClose: () => void }>): React.JSX.Element {
+function AllDepartmentsSheet({ onClose, openDepartment }: Readonly<{
+  onClose: () => void;
+  openDepartment: (departmentSlug: DepartmentSlug) => void;
+}>): React.JSX.Element {
   const [query, setQuery] = useState("");
   const entries = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
@@ -95,15 +121,14 @@ function AllDepartmentsSheet({ onClose }: Readonly<{ onClose: () => void }>): Re
 
   return (
     <>
-      <p className="sheet-eyebrow">Navegacao</p>
-      <h2 id="department-sheet-title">Todos os departamentos</h2>
-      <label className="sheet-search">
-        <span aria-hidden="true">⌕</span>
-        <span className="sr-only">Buscar departamento</span>
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar departamento" />
-      </label>
-      <nav className="sheet-leaves" aria-label="Todos os departamentos">
-        {entries.map((entry) => <SheetRow key={`${entry.type}-${entry.slug}`} href={entry.href} label={entry.label} onClose={onClose} />)}
+      <div className="sheet-static-header">
+        <h2 id="department-sheet-title">Todos os departamentos</h2>
+        <SheetSearch label="Buscar departamento" placeholder="Buscar departamento" query={query} onQueryChange={setQuery} />
+      </div>
+      <nav className="sheet-scroll-region" aria-label="Todos os departamentos">
+        {entries.map((entry) => entry.type === "leaf" || entry.type === "link"
+          ? <SheetRow key={`${entry.type}-${entry.slug}`} href={entry.href} label={entry.label} onClose={onClose} />
+          : <button key={`${entry.type}-${entry.slug}`} type="button" className="sheet-leaf" onClick={() => openDepartment(entry.slug)}><span>{entry.label}</span><span aria-hidden="true">›</span></button>)}
         {entries.length === 0 ? <p className="sheet-empty">Nenhum departamento encontrado.</p> : null}
       </nav>
     </>
@@ -113,23 +138,25 @@ function AllDepartmentsSheet({ onClose }: Readonly<{ onClose: () => void }>): Re
 function DepartmentLeavesSheet({ departmentSlug, onClose }: Readonly<{ departmentSlug: DepartmentSlug; onClose: () => void }>): React.JSX.Element {
   const department = findDepartmentBySlug(departmentSlug);
   const leaves = listLeaves().filter((leaf) => leaf.departmentSlug === departmentSlug);
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
+  const filteredLeaves = normalizedQuery.length === 0
+    ? leaves
+    : leaves.filter((leaf) => leaf.label.toLocaleLowerCase("pt-BR").includes(normalizedQuery));
 
   return (
     <>
-      <p className="sheet-eyebrow">Departamento</p>
-      <h2 id="department-sheet-title">{department?.label ?? departmentSlug}</h2>
-      <p id="department-sheet-description" className="sheet-description">{department?.description}</p>
-      <nav className="sheet-leaves" aria-label={`Folhas de ${department?.label ?? departmentSlug}`}>
+      <div className="sheet-static-header">
+        <h2 id="department-sheet-title">{department?.label ?? departmentSlug}</h2>
+        <SheetSearch label={`Buscar em ${department?.label ?? departmentSlug}`} placeholder="Buscar folhas" query={query} onQueryChange={setQuery} />
+      </div>
+      <nav className="sheet-scroll-region" aria-label={`Folhas de ${department?.label ?? departmentSlug}`}>
         <SheetRow href={`/departamento/${departmentSlug}`} label="Todos" onClose={onClose} />
-        {leaves.map((leaf) => <SheetRow key={leaf.slug} href={`/folha/${leaf.slug}`} label={leaf.label} onClose={onClose} />)}
+        {filteredLeaves.map((leaf) => <SheetRow key={leaf.slug} href={`/folha/${leaf.slug}`} label={leaf.label} onClose={onClose} />)}
+        {filteredLeaves.length === 0 ? <p className="sheet-empty">Nenhuma folha encontrada.</p> : null}
       </nav>
     </>
   );
-}
-
-function SheetContents({ panel, onClose }: Readonly<{ panel: Exclude<DepartmentNavigationPanel, null>; onClose: () => void }>): React.JSX.Element {
-  if (panel.type === "all") return <AllDepartmentsSheet onClose={onClose} />;
-  return <DepartmentLeavesSheet departmentSlug={panel.departmentSlug} onClose={onClose} />;
 }
 
 function OpenDepartmentSheet({ panel, close, triggerRef }: Readonly<{
@@ -138,27 +165,30 @@ function OpenDepartmentSheet({ panel, close, triggerRef }: Readonly<{
   triggerRef: React.RefObject<HTMLButtonElement | null>;
 }>): React.JSX.Element {
   const sheetRef = useRef<HTMLElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const scrollRegionRef = useRef<HTMLElement>(null);
+  const { openDepartment } = useDepartmentNavigation();
 
-  useSheetAccessibility(sheetRef, close, triggerRef);
+  useSheetAccessibility(sheetRef, close, triggerRef, panel.type === "all" ? "all" : panel.departmentSlug);
+  useBottomSheetDismiss({ sheetRef, scrollRegionRef, backdropRef, onClose: close });
 
   return (
-    <div className="sheet-backdrop" role="presentation" onClick={close}>
+    <div ref={backdropRef} className="sheet-backdrop" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) close(); }}>
       <aside
         ref={sheetRef}
         className="department-sheet"
         id="department-sheet"
         aria-labelledby="department-sheet-title"
-        aria-describedby={panel.type === "department" ? "department-sheet-description" : undefined}
         role="dialog"
         aria-modal="true"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="sheet-handle" aria-hidden="true" />
-        <div className="sheet-heading">
-          <span className="sheet-brand-mark" aria-hidden="true">S</span>
-          <button type="button" className="icon-button" aria-label="Fechar menu" aria-controls="department-sheet" data-sheet-initial-focus="true" onClick={close}>X</button>
-        </div>
-        <SheetContents panel={panel} onClose={close} />
+        {panel.type === "all" ? (
+          <AllDepartmentsSheet onClose={close} openDepartment={(departmentSlug) => openDepartment(departmentSlug, null)} />
+        ) : (
+          <DepartmentLeavesSheet departmentSlug={panel.departmentSlug} onClose={close} />
+        )}
       </aside>
     </div>
   );

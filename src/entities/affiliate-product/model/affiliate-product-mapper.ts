@@ -199,6 +199,7 @@ export function mapSupabasePublicProductRowToCard(
     row.is_active !== true ||
     row.department_slug === null ||
     row.leaf_slug === null ||
+    !isLeafSlug(row.leaf_slug) ||
     (row.subcategory_slug !== null && !isSubcategorySlug(row.subcategory_slug)) ||
     !isDepartmentLeafPair(row.department_slug, row.leaf_slug)
   ) {
@@ -212,5 +213,6 @@ export function mapSupabasePublicProductRowToCard(
     priceOriginalCents: originalPriceCents,
     priceDiscountCents: discountPriceCents,
     marketplace: "shopee",
+    leafSlug: row.leaf_slug,
   };
 }

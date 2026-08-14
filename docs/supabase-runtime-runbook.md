@@ -177,8 +177,10 @@ A listagem usa paginacao keyset com cursor opaco, ordenada por
 proxima pagina. Uma janela de ate 10 lotes pede no maximo 241 linhas por
 consulta server-only; linhas invalidas podem acionar refill limitado por cursor,
 sem ultrapassar o teto interno. O limite nunca vem diretamente da URL. O botao
-"Carregar mais" e um link de navegacao progressiva server-only; nao ha Server
-Action nem consulta ao abrir o sheet. A busca usa a RPC de full-text search com
+"Carregar mais" possui uma fronteira client pequena para acrescentar o proximo
+lote sem recarregar a pagina. A Server Action valida o href e executa a
+consulta server-only; sem JavaScript, o mesmo elemento continua sendo um link
+normal. Nao ha consulta ao abrir o sheet. A busca usa a RPC de full-text search com
 `title` em peso maior e `ai_copy` em peso menor. `ai_copy` nunca e selecionado
 nem enviado para os cards.
 
@@ -245,7 +247,9 @@ O redirect usa `SUPABASE_CLICK_KEY` somente para `record_click`. O tracking e
 fail-open e falhas retornadas pelo Supabase sao registradas sem chaves,
 destinos ou dados sensiveis.
 
-O catalogo usa navegacao progressiva server-only: `pagina` aceita no maximo 10
-lotes de 24 produtos. Ao atingir 240 cards, a proxima janela comeca por um
-cursor opaco e a interface continua por links server-rendered. Nenhum card ou
-Server Action e hidratado no navegador.
+O catalogo usa navegacao progressiva: `pagina` aceita no maximo 10 lotes de 24
+produtos. Ao atingir 240 cards, a proxima janela comeca por um cursor opaco.
+O botao de carregar mais e a unica fronteira client da grade: ele chama uma
+Server Action validada, que consulta no servidor e devolve somente DTOs
+publicos; o link continua funcionando como fallback sem JavaScript. Nenhuma
+credencial ou dado administrativo e hidratado no navegador.

@@ -7,6 +7,7 @@ import {
   getMarketplaceLabel,
 } from "../model/affiliate-product-presentation";
 import type { PublicAffiliateProductCardData } from "../model/affiliate-product";
+import { getLeafBySlug } from "@/shared/config/affiliate-taxonomy";
 
 export function AffiliateProductCard({ product, variant = "default" }: Readonly<{
   product: PublicAffiliateProductCardData;
@@ -15,6 +16,7 @@ export function AffiliateProductCard({ product, variant = "default" }: Readonly<
   const price = formatAffiliatePrice(product.priceDiscountCents);
   const originalPrice = formatAffiliatePrice(product.priceOriginalCents);
   const discount = getAffiliateDiscountPercent(product);
+  const leaf = getLeafBySlug(product.leafSlug);
 
   return (
     <article className={`product-card ${variant === "hero" ? "product-card-hero" : ""}`.trim()}>
@@ -31,6 +33,7 @@ export function AffiliateProductCard({ product, variant = "default" }: Readonly<
           {originalPrice && discount !== null ? <span className="product-original-price">{originalPrice}</span> : null}
           <span className="product-price">{price ?? "Confira no marketplace"}</span>
         </div>
+        <p className="product-taxonomy-label">{leaf.label}</p>
         <Link href={`/r/${product.id}`} className="product-cta">Ver oferta</Link>
       </div>
     </article>

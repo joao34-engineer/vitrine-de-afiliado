@@ -12,7 +12,7 @@ separacao do header durante o scroll, sem deixar uma borda fixa sempre visivel.
 Comportamento desejado:
 
 - no topo da pagina, header, busca e dept rail parecem um bloco unico;
-- ao rolar a pagina para baixo, a linha aparece suavemente abaixo do rail;
+- ao iniciar o scroll, a linha aparece suavemente abaixo do rail;
 - quando o usuario volta para o topo e o navbar se reintegra ao lugar original,
   a linha some;
 - o mesmo comportamento vale para mobile e desktop;
@@ -35,7 +35,8 @@ Padrao atual:
   `height: 1px` e `pointer-events: none`.
 - A cor vem de token CSS: `--dept-divider`.
 - A animacao usa `gsap` + `ScrollTrigger`.
-- No topo, a linha inicia escondida.
+- No topo, a linha inicia totalmente escondida (`autoAlpha: 0`); ela nao fica
+  parcialmente visivel.
 - O reveal completa por volta de `140px` de scroll.
 - Em `prefers-reduced-motion: reduce`, a linha fica visivel e estatica, sem
   listener de scroll ou scrub.
@@ -63,6 +64,9 @@ Padrao atual:
 Token sugerido para dark: um tom proximo de `#35302A` ou o border dark vigente
 do app. O valor final deve sair dos tokens reais da `affiliate-vitrine` quando
 o CSS existir.
+
+Os sublinhados dos itens do rail sao elementos estaticos independentes. A
+hairline nao deve substituir, duplicar ou animar esses sublinhados.
 
 ## Contrato de interacao
 

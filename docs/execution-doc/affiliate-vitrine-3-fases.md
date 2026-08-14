@@ -109,6 +109,10 @@ nem qualquer chave administrativa.
 
 ## Fase 3 - Go-live
 
+Status: adiada ate o encerramento da Fase 4. A implementacao visual do design
+aprovado no Figma sera a frente ativa agora; o checklist de go-live e os
+smoke tests serao retomados depois que a Fase 4 estiver concluida.
+
 Objetivo: preparar a vitrine para producao.
 
 Entregas:
@@ -141,6 +145,10 @@ DoD:
 
 ## Fase 4 - Implementacao do Design
 
+Status: frente ativa. Esta fase sera executada antes da retomada da Fase 3,
+preservando os contratos, a seguranca, o tracking e as consultas server-only ja
+implementados.
+
 Objetivo: trazer para a `affiliate-vitrine` o design aprovado no Figma, sem
 reabrir contratos de dados, seguranca ou arquitetura ja concluidos.
 
@@ -152,7 +160,7 @@ Entregas:
   os componentes server-only do catalogo.
 - Alinhar tokens visuais, tipografia, espacamento, temas claro/escuro e
   responsividade com o arquivo do Figma.
-- Preservar navegacao por departamento/folha, paginacao server-only, redirect e
+- Preservar navegacao por departamento/folha, consultas server-only, redirect e
   disclosure de afiliado.
 - Validar visualmente desktop e mobile com screenshots e revisar acessibilidade
   das interacoes existentes.
@@ -162,13 +170,16 @@ Nao fazer:
 - Nao alterar `my-collection-page`.
 - Nao reintroduzir Shopify, Pixel ou CAPI.
 - Nao substituir a taxonomia, os contratos Supabase ou a politica de acesso.
-- Nao transformar cards ou consultas em fluxo client-side sem decisao explicita.
+- Nao mover consultas, RLS ou dados internos para o client. A unica excecao
+  visual e o botao `Carregar mais`, que recebe DTOs publicos por Server Action
+  para acrescentar o proximo lote sem recarregar a pagina.
 
 DoD:
 
 - Os frames aprovados estao representados nas rotas reais da vitrine.
 - O comportamento visual e responsivo foi validado em desktop e mobile.
-- O sheet continua sem fetch e o catalogo continua server-only.
+- O sheet continua sem fetch, as consultas continuam server-only e somente a
+  interacao de `Carregar mais` possui uma fronteira client explicita.
 - Testes, TypeScript, lint e build passam.
 - Nenhum contrato de seguranca ou tracking foi ampliado.
 

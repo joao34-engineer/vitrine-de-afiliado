@@ -1,8 +1,12 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => <a href={href} {...props}>{children}</a>,
+}));
+vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
+vi.mock("@/shared/lib/gsap-client", () => ({
+  gsap: { set: vi.fn(), to: vi.fn(() => ({})), killTweensOf: vi.fn() },
 }));
 vi.mock("./department-rail-divider", () => ({
   DepartmentRailDivider: () => <span aria-hidden="true" />,
@@ -22,7 +26,12 @@ function renderNavigation(): void {
 }
 
 describe("department rail sheet", () => {
+  beforeEach(() => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+  });
+
   afterEach(() => {
+    vi.unstubAllGlobals();
     document.querySelector("main[data-sheet-background]")?.remove();
   });
 
@@ -35,7 +44,7 @@ describe("department rail sheet", () => {
 
     fireEvent.click(trigger);
     expect(screen.getByRole("dialog").getAttribute("aria-modal")).toBe("true");
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Fechar menu" }));
+    expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "Buscar em Homens" }));
     expect(document.querySelector("main")?.getAttribute("aria-hidden")).toBe("true");
     expect((document.querySelector("main") as HTMLElement).inert).toBe(true);
     expect(document.querySelector(".department-rail-wrap")?.getAttribute("aria-hidden")).toBe("true");
@@ -50,14 +59,14 @@ describe("department rail sheet", () => {
     renderNavigation();
     fireEvent.click(screen.getByRole("button", { name: "Homens" }));
 
-    const closeButton = screen.getByRole("button", { name: "Fechar menu" });
+    const searchInput = screen.getByRole("textbox", { name: "Buscar em Homens" });
     const links = within(screen.getByRole("dialog")).getAllByRole("link");
     const lastLink = links[links.length - 1];
     lastLink?.focus();
     fireEvent.keyDown(document, { key: "Tab" });
-    expect(document.activeElement).toBe(closeButton);
+    expect(document.activeElement).toBe(searchInput);
 
-    closeButton.focus();
+    searchInput.focus();
     fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
     expect(document.activeElement).toBe(lastLink);
   });

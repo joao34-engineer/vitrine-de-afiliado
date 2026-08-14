@@ -71,6 +71,7 @@ export type PublicAffiliateProductCardData = {
   readonly priceOriginalCents: number | null;
   readonly priceDiscountCents: number | null;
   readonly marketplace: AffiliateMarketplace;
+  readonly leafSlug: LeafSlug;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {

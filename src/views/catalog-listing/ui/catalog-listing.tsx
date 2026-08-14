@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { DepartmentMenuButton } from "@/features/department-navigation";
+import { DepartmentMenuButton, DepartmentRail } from "@/features/department-navigation";
 import type { DepartmentSlug, LeafSlug } from "@/shared/config/affiliate-taxonomy";
 import type { PublicAffiliateProductCardData } from "@/entities/affiliate-product";
 import { CatalogProductGrid } from "@/widgets/catalog-product-grid";
@@ -46,6 +46,7 @@ export function CatalogListing({
         </form>
         <DepartmentMenuButton label="Filtros" className="listing-filter-button" />
       </div>
+      <DepartmentRail className="listing-department-rail" />
       {products.length > 0 ? (
         <CatalogProductGrid products={products} nextHref={nextHref} nextLabel={nextLabel} previousHref={previousHref} />
       ) : (

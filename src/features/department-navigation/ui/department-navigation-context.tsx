@@ -13,7 +13,7 @@ type DepartmentNavigationContextValue = {
   readonly panel: DepartmentNavigationPanel;
   readonly triggerRef: RefObject<HTMLButtonElement | null>;
   readonly openAll: (trigger: HTMLButtonElement) => void;
-  readonly openDepartment: (departmentSlug: DepartmentSlug, trigger: HTMLButtonElement) => void;
+  readonly openDepartment: (departmentSlug: DepartmentSlug, trigger?: HTMLButtonElement | null) => void;
   readonly close: () => void;
 };
 
@@ -31,7 +31,7 @@ export function DepartmentNavigationProvider({ children }: Readonly<{ children: 
       setPanel({ type: "all" });
     },
     openDepartment: (departmentSlug, trigger) => {
-      triggerRef.current = trigger;
+      if (trigger) triggerRef.current = trigger;
       setPanel({ type: "department", departmentSlug });
     },
     close: () => setPanel(null),

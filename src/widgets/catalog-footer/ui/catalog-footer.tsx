@@ -10,15 +10,15 @@ export function CatalogFooter(): React.JSX.Element {
       <div className="footer-grid">
         <div className="footer-brand">
           <p className="brand-name">salvat&amp;brand</p>
-          <p>Ofertas escolhidas por curadoria. A compra acontece no marketplace parceiro.</p>
+          <p>Curadoria de ofertas afiliadas. A compra acontece no marketplace parceiro.</p>
         </div>
-        <div>
+        <div className="footer-navigation">
           <p className="footer-heading">Navegacao</p>
           <Link href="/como-funciona">Como funciona</Link>
           <Link href="/transparencia">Transparencia</Link>
           <Link href="/">Ofertas recentes</Link>
         </div>
-        <div>
+        <div className="footer-community">
           <p className="footer-heading">Comunidade</p>
           <div className="footer-community-links">
             {env.NEXT_PUBLIC_INSTAGRAM_URL ? (
@@ -27,6 +27,7 @@ export function CatalogFooter(): React.JSX.Element {
             {env.NEXT_PUBLIC_WHATSAPP_URL ? (
               <a href={env.NEXT_PUBLIC_WHATSAPP_URL} rel="noreferrer" target="_blank">WhatsApp</a>
             ) : null}
+            <Link href="/como-funciona">Como funciona</Link>
           </div>
         </div>
         <div className="footer-disclosure">

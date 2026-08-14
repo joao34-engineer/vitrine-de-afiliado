@@ -107,8 +107,10 @@ consulta. Indices redundantes nao devem ser criados.
 - Cada segmento publico de catalogo possui `loading.tsx` e `error.tsx` para
   streaming do shell, skeleton e retry apropriado.
 - A troca de folha deve manter feedback visual e evitar uma tela vazia sem contexto.
-- Componentes client ficam restritos a eventos, estado e APIs do navegador; o grid
-  e os cards permanecem server-side quando nao houver interacao propria.
+- Componentes client ficam restritos a eventos, estado e APIs do navegador. O
+  grid inicial e os cards sem interacao propria permanecem server-side; a
+  fronteira de `Carregar mais` pode renderizar apenas os DTOs publicos recebidos
+  de uma Server Action validada.
 - Arquivos-fonte continuam sendo TypeScript/TSX. `use client` apenas define uma
   fronteira de hidratacao; o Next.js compila esse TypeScript para o navegador.
 

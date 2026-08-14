@@ -15,6 +15,7 @@ const item = {
   priceOriginalCents: 12990,
   priceDiscountCents: 9990,
   marketplace: "shopee" as const,
+  leafSlug: "audio" as const,
 };
 
 describe("progressive public catalog pages", () => {

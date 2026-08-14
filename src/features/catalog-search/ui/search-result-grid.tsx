@@ -1,4 +1,5 @@
-import { AffiliateProductCard, type PublicAffiliateProductCardData } from "@/entities/affiliate-product";
+import type { PublicAffiliateProductCardData } from "@/entities/affiliate-product";
+import { LoadMoreProducts } from "@/features/load-more-products";
 
 export function SearchResultGrid({
   items,
@@ -11,13 +12,5 @@ export function SearchResultGrid({
   nextLabel?: string;
   previousHref?: string | null;
 }>): React.JSX.Element {
-  return (
-    <>
-      <div className="product-grid">{items.map((product) => <AffiliateProductCard key={product.id} product={product} />)}</div>
-      <nav className="catalog-pagination" aria-label="Paginacao da busca">
-        {previousHref ? <a className="load-more-button pagination-link" href={previousHref}>Voltar</a> : null}
-        {nextHref ? <a className="load-more-button pagination-link" href={nextHref}>{nextLabel}</a> : null}
-      </nav>
-    </>
-  );
+  return <LoadMoreProducts items={items} nextHref={nextHref} nextLabel={nextLabel} previousHref={previousHref} />;
 }

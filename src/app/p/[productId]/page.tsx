@@ -16,5 +16,5 @@ export default async function ProductPage({ params }: { params: Promise<{ produc
     leafSlug: product.leafSlug,
     excludeProductId: product.id,
   });
-  return <CatalogShell mobileSearch="hidden"><ProductDetail product={product} relatedProducts={relatedProducts} /></CatalogShell>;
+  return <CatalogShell mobileSearch="hidden" mobileRail="hidden"><ProductDetail product={product} relatedProducts={relatedProducts} /></CatalogShell>;
 }

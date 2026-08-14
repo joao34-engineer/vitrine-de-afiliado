@@ -3,15 +3,18 @@ import Link from "next/link";
 
 import { DepartmentMenuButton, DepartmentRail } from "@/features/department-navigation";
 
-export function CatalogHeader({ mobileSearch = "header" }: Readonly<{ mobileSearch?: "header" | "listing" | "hidden" }>): React.JSX.Element {
+export function CatalogHeader({ mobileSearch = "header", mobileRail = "header" }: Readonly<{
+  mobileSearch?: "header" | "listing" | "hidden";
+  mobileRail?: "header" | "listing" | "hidden";
+}>): React.JSX.Element {
   return (
     <header className="site-header" data-sheet-background>
       <div className="header-inner">
         <Link className="brand-lockup" href="/" aria-label="Salvat Ofertas, inicio">
-          <span className="brand-mark"><Image src="/brand/salvat-brand-seal.jpeg" alt="" width={40} height={40} priority /></span>
+          <span className="brand-mark"><Image src="/brand/salvat-brand-seal.png" alt="" width={38} height={38} priority /></span>
           <span>
             <span className="brand-name">salvat&amp;brand</span>
-            <span className="brand-subtitle">ofertas escolhidas</span>
+            <span className="brand-subtitle">achados selecionados</span>
           </span>
         </Link>
         <DepartmentMenuButton />
@@ -21,7 +24,7 @@ export function CatalogHeader({ mobileSearch = "header" }: Readonly<{ mobileSear
             id="catalog-search"
             name="q"
             type="search"
-            placeholder="O que voce esta procurando?"
+            placeholder="Buscar achadinhos"
             autoComplete="off"
           />
           <button type="submit" aria-label="Buscar produtos" className="search-submit">
@@ -29,7 +32,7 @@ export function CatalogHeader({ mobileSearch = "header" }: Readonly<{ mobileSear
           </button>
         </form>
       </div>
-      <DepartmentRail />
+      <DepartmentRail className={`header-department-rail mobile-rail-${mobileRail}`.trim()} />
     </header>
   );
 }

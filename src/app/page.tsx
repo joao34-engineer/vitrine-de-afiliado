@@ -14,5 +14,5 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
   const previousHref = page.pageNumber > 1
     ? createCatalogPaginationHref({ pathname: "/", pageNumber: page.pageNumber - 1, startingCursor: page.startingCursor })
     : null;
-  return <CatalogShell><CatalogHome products={page.items} nextHref={nextHref} nextLabel={page.pageNumber === 10 ? "Proxima janela" : undefined} previousHref={previousHref} /></CatalogShell>;
+  return <CatalogShell mobileRail="header"><CatalogHome products={page.items} nextHref={nextHref} nextLabel={page.pageNumber === 10 ? "Proxima janela" : undefined} previousHref={previousHref} /></CatalogShell>;
 }
