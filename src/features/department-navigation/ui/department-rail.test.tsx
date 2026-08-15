@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import { useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
@@ -6,7 +7,19 @@ vi.mock("next/link", () => ({
 }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
 vi.mock("@/shared/lib/gsap-client", () => ({
-  gsap: { set: vi.fn(), to: vi.fn(() => ({})), killTweensOf: vi.fn() },
+  gsap: {
+    set: vi.fn(),
+    to: vi.fn(() => ({})),
+    killTweensOf: vi.fn(),
+    timeline: vi.fn(() => ({
+      to: vi.fn().mockReturnThis(),
+      from: vi.fn().mockReturnThis(),
+      kill: vi.fn(),
+    })),
+  },
+  useGSAP: vi.fn((callback: (context: unknown, contextSafe: <T extends (...args: never[]) => unknown>(fn: T) => T) => void) => {
+    useEffect(() => callback({}, (fn) => fn), [callback]);
+  }),
 }));
 vi.mock("./department-rail-divider", () => ({
   DepartmentRailDivider: () => <span aria-hidden="true" />,
@@ -44,7 +57,7 @@ describe("department rail sheet", () => {
 
     fireEvent.click(trigger);
     expect(screen.getByRole("dialog").getAttribute("aria-modal")).toBe("true");
-    expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "Buscar em Homens" }));
+    expect(document.activeElement).toBe(screen.getByRole("dialog"));
     expect(document.querySelector("main")?.getAttribute("aria-hidden")).toBe("true");
     expect((document.querySelector("main") as HTMLElement).inert).toBe(true);
     expect(document.querySelector(".department-rail-wrap")?.getAttribute("aria-hidden")).toBe("true");
@@ -59,7 +72,7 @@ describe("department rail sheet", () => {
     renderNavigation();
     fireEvent.click(screen.getByRole("button", { name: "Homens" }));
 
-    const searchInput = screen.getByRole("textbox", { name: "Buscar em Homens" });
+    const searchInput = screen.getByRole("searchbox", { name: "Buscar em Homens" });
     const links = within(screen.getByRole("dialog")).getAllByRole("link");
     const lastLink = links[links.length - 1];
     lastLink?.focus();

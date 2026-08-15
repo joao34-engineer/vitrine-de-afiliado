@@ -27,7 +27,7 @@ export function ScrollRevealHairline({ className }: Readonly<{ className: string
       scrollTrigger: { start: 0, end: RAIL_LINE_REVEAL_END_PX, scrub: 0.4 },
     });
     return () => tween.kill();
-  });
+  }, { scope: lineRef });
 
   return <span ref={lineRef} aria-hidden="true" className={className} />;
 }

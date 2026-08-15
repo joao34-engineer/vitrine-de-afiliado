@@ -12,6 +12,7 @@ import {
 
 import { useBottomSheetDismiss } from "../lib/use-bottom-sheet-dismiss";
 import { useDepartmentNavigation, type DepartmentNavigationPanel } from "./department-navigation-context";
+import { gsap, useGSAP } from "@/shared/lib/gsap-client";
 
 const FOCUSABLE_SELECTOR = "a[href],button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex='-1'])";
 
@@ -21,7 +22,6 @@ type SheetEntry =
   | { readonly type: "leaf"; readonly slug: string; readonly label: string; readonly href: string };
 
 function getAllSheetEntries(): readonly SheetEntry[] {
-  const homeEntry: SheetEntry = { type: "link", slug: "home", label: "Home", href: "/" };
   const entries = listDepartments().flatMap<SheetEntry>((department): readonly SheetEntry[] => {
     if (department.slug === "mais") {
       return listLeaves()
@@ -32,34 +32,48 @@ function getAllSheetEntries(): readonly SheetEntry[] {
     if (department.slug === "home") return [];
     return [{ type: "department" as const, slug: department.slug, label: department.label }];
   });
-  return [homeEntry, ...entries];
+  return entries;
 }
 
 function useSheetAccessibility(
   sheetRef: React.RefObject<HTMLElement | null>,
   onClose: () => void,
   triggerRef: React.RefObject<HTMLButtonElement | null>,
-  panelKey: string,
 ): void {
+  const closeRef = useRef(onClose);
+
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     const triggerElement = triggerRef.current;
+    const scrollY = window.scrollY;
+    const bodyStyle = document.body.style;
+    const previousBodyPosition = bodyStyle.position;
+    const previousBodyTop = bodyStyle.top;
+    const previousBodyWidth = bodyStyle.width;
+    const previousBodyOverflow = bodyStyle.overflow;
+    const previousBodyOverscrollBehavior = bodyStyle.overscrollBehavior;
+
+    bodyStyle.position = "fixed";
+    bodyStyle.top = `-${scrollY}px`;
+    bodyStyle.width = "100%";
+    bodyStyle.overflow = "hidden";
+    bodyStyle.overscrollBehavior = "none";
+
     const backgroundElements = Array.from(document.querySelectorAll<HTMLElement>("[data-sheet-background]"));
     backgroundElements.forEach((element) => {
       element.inert = true;
       element.setAttribute("aria-hidden", "true");
     });
 
-    const focusInitial = () => {
-      const initialFocus = sheetRef.current?.querySelector<HTMLElement>('[data-sheet-initial-focus="true"]');
-      const focusable = sheetRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
-      (initialFocus ?? focusable)?.focus();
-    };
-    focusInitial();
+    sheetRef.current?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        closeRef.current();
         return;
       }
       if (event.key !== "Tab") return;
@@ -84,9 +98,19 @@ function useSheetAccessibility(
         element.inert = false;
         element.removeAttribute("aria-hidden");
       });
+      bodyStyle.position = previousBodyPosition;
+      bodyStyle.top = previousBodyTop;
+      bodyStyle.width = previousBodyWidth;
+      bodyStyle.overflow = previousBodyOverflow;
+      bodyStyle.overscrollBehavior = previousBodyOverscrollBehavior;
+      try {
+        window.scrollTo(0, scrollY);
+      } catch {
+        // jsdom and embedded webviews may not implement scrollTo.
+      }
       triggerElement?.focus();
     };
-  }, [onClose, panelKey, sheetRef, triggerRef]);
+  }, [sheetRef, triggerRef]);
 }
 
 function SheetRow({ href, label, onClose }: Readonly<{ href: string; label: string; onClose: () => void }>): React.JSX.Element {
@@ -103,14 +127,15 @@ function SheetSearch({ label, placeholder, query, onQueryChange }: Readonly<{
     <label className="sheet-search">
       <span aria-hidden="true" className="sheet-search-icon">⌕</span>
       <span className="sr-only">{label}</span>
-      <input data-sheet-initial-focus="true" value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder={placeholder} />
+      <input type="search" value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder={placeholder} />
     </label>
   );
 }
 
-function AllDepartmentsSheet({ onClose, openDepartment }: Readonly<{
+function AllDepartmentsSheet({ onClose, openDepartment, scrollRegionRef }: Readonly<{
   onClose: () => void;
   openDepartment: (departmentSlug: DepartmentSlug) => void;
+  scrollRegionRef: React.RefObject<HTMLElement | null>;
 }>): React.JSX.Element {
   const [query, setQuery] = useState("");
   const entries = useMemo(() => {
@@ -122,10 +147,10 @@ function AllDepartmentsSheet({ onClose, openDepartment }: Readonly<{
   return (
     <>
       <div className="sheet-static-header">
-        <h2 id="department-sheet-title">Todos os departamentos</h2>
         <SheetSearch label="Buscar departamento" placeholder="Buscar departamento" query={query} onQueryChange={setQuery} />
+        <h2 id="department-sheet-title">Todos os departamentos</h2>
       </div>
-      <nav className="sheet-scroll-region" aria-label="Todos os departamentos">
+      <nav ref={scrollRegionRef} className="sheet-scroll-region" aria-label="Todos os departamentos">
         {entries.map((entry) => entry.type === "leaf" || entry.type === "link"
           ? <SheetRow key={`${entry.type}-${entry.slug}`} href={entry.href} label={entry.label} onClose={onClose} />
           : <button key={`${entry.type}-${entry.slug}`} type="button" className="sheet-leaf" onClick={() => openDepartment(entry.slug)}><span>{entry.label}</span><span aria-hidden="true">›</span></button>)}
@@ -135,7 +160,11 @@ function AllDepartmentsSheet({ onClose, openDepartment }: Readonly<{
   );
 }
 
-function DepartmentLeavesSheet({ departmentSlug, onClose }: Readonly<{ departmentSlug: DepartmentSlug; onClose: () => void }>): React.JSX.Element {
+function DepartmentLeavesSheet({ departmentSlug, onClose, scrollRegionRef }: Readonly<{
+  departmentSlug: DepartmentSlug;
+  onClose: () => void;
+  scrollRegionRef: React.RefObject<HTMLElement | null>;
+}>): React.JSX.Element {
   const department = findDepartmentBySlug(departmentSlug);
   const leaves = listLeaves().filter((leaf) => leaf.departmentSlug === departmentSlug);
   const [query, setQuery] = useState("");
@@ -147,10 +176,10 @@ function DepartmentLeavesSheet({ departmentSlug, onClose }: Readonly<{ departmen
   return (
     <>
       <div className="sheet-static-header">
-        <h2 id="department-sheet-title">{department?.label ?? departmentSlug}</h2>
         <SheetSearch label={`Buscar em ${department?.label ?? departmentSlug}`} placeholder="Buscar folhas" query={query} onQueryChange={setQuery} />
+        <h2 id="department-sheet-title">{department?.label ?? departmentSlug}</h2>
       </div>
-      <nav className="sheet-scroll-region" aria-label={`Folhas de ${department?.label ?? departmentSlug}`}>
+      <nav ref={scrollRegionRef} className="sheet-scroll-region" aria-label={`Folhas de ${department?.label ?? departmentSlug}`}>
         <SheetRow href={`/departamento/${departmentSlug}`} label="Todos" onClose={onClose} />
         {filteredLeaves.map((leaf) => <SheetRow key={leaf.slug} href={`/folha/${leaf.slug}`} label={leaf.label} onClose={onClose} />)}
         {filteredLeaves.length === 0 ? <p className="sheet-empty">Nenhuma folha encontrada.</p> : null}
@@ -169,8 +198,33 @@ function OpenDepartmentSheet({ panel, close, triggerRef }: Readonly<{
   const scrollRegionRef = useRef<HTMLElement>(null);
   const { openDepartment } = useDepartmentNavigation();
 
-  useSheetAccessibility(sheetRef, close, triggerRef, panel.type === "all" ? "all" : panel.departmentSlug);
+  useSheetAccessibility(sheetRef, close, triggerRef);
   useBottomSheetDismiss({ sheetRef, scrollRegionRef, backdropRef, onClose: close });
+
+  useGSAP(() => {
+    const sheet = sheetRef.current;
+    const backdrop = backdropRef.current;
+    if (!sheet || !backdrop) return;
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const rows = sheet.querySelectorAll<HTMLElement>(".sheet-leaf");
+    const timeline = gsap.timeline();
+
+    if (reduceMotion || !window.matchMedia("(max-width: 640px)").matches) {
+      gsap.set(backdrop, { autoAlpha: 1 });
+      gsap.set(sheet, { y: 0 });
+      return () => timeline.kill();
+    }
+
+    gsap.set(backdrop, { autoAlpha: 0 });
+    gsap.set(sheet, { y: 18 });
+    timeline
+      .to(backdrop, { autoAlpha: 1, duration: 0.18, ease: "power2.out" }, 0)
+      .to(sheet, { y: 0, duration: 0.28, ease: "power3.out" }, 0)
+      .from(rows, { y: 8, autoAlpha: 0, duration: 0.2, stagger: 0.018, ease: "power2.out" }, 0.08);
+
+    return () => timeline.kill();
+  }, { scope: sheetRef, dependencies: [panel.type === "all" ? "all" : panel.departmentSlug], revertOnUpdate: true });
 
   return (
     <div ref={backdropRef} className="sheet-backdrop" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) close(); }}>
@@ -181,13 +235,19 @@ function OpenDepartmentSheet({ panel, close, triggerRef }: Readonly<{
         aria-labelledby="department-sheet-title"
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="sheet-handle" aria-hidden="true" />
+        <div className="sheet-brand-row" aria-hidden="true" />
         {panel.type === "all" ? (
-          <AllDepartmentsSheet onClose={close} openDepartment={(departmentSlug) => openDepartment(departmentSlug, null)} />
+          <AllDepartmentsSheet
+            onClose={close}
+            openDepartment={(departmentSlug) => openDepartment(departmentSlug, null)}
+            scrollRegionRef={scrollRegionRef}
+          />
         ) : (
-          <DepartmentLeavesSheet departmentSlug={panel.departmentSlug} onClose={close} />
+          <DepartmentLeavesSheet departmentSlug={panel.departmentSlug} onClose={close} scrollRegionRef={scrollRegionRef} />
         )}
       </aside>
     </div>

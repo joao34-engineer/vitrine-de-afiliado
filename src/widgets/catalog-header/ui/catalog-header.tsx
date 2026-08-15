@@ -36,6 +36,21 @@ export function CatalogHeader({ mobileSearch = "header", mobileRail = "header" }
           <DepartmentMenuButton />
         </div>
       </div>
+      {mobileSearch === "header" ? (
+        <form className="mobile-header-search-form" action="/buscar" method="get" role="search">
+          <label className="sr-only" htmlFor="mobile-catalog-search">Buscar produtos</label>
+          <input
+            id="mobile-catalog-search"
+            name="q"
+            type="search"
+            placeholder="Buscar achadinhos"
+            autoComplete="off"
+          />
+          <button type="submit" aria-label="Buscar produtos" className="search-submit">
+            Buscar
+          </button>
+        </form>
+      ) : null}
       <DepartmentRail className={`header-department-rail mobile-rail-${mobileRail}`.trim()} />
     </header>
   );

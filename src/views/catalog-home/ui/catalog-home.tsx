@@ -58,7 +58,6 @@ export function CatalogHome({
       <section className="catalog-section home-offers">
         <div className="catalog-heading">
           <div>
-            <p className="eyebrow">Selecao recente</p>
             <h2>Achados em alta</h2>
             <p className="catalog-description">Produtos que merecem entrar na sua lista hoje.</p>
           </div>
