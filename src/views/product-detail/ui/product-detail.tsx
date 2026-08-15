@@ -33,11 +33,6 @@ export function ProductDetail({ product, relatedProducts = [] }: Readonly<{
             <strong>{price ?? "Confira preco e disponibilidade no marketplace"}</strong>
             {discount !== null ? <span className="discount-inline">-{discount}%</span> : null}
           </div>
-          <div className="product-detail-info">
-            <p>Selecionado para uso diario</p>
-            <p>Click seguro via redirecionamento</p>
-            <p>Preco pode mudar na loja origem</p>
-          </div>
           <Link href={`/r/${product.id}`} className="detail-cta">
             <span className="detail-cta-mobile">Ver oferta</span>
             <span className="detail-cta-desktop">Ver oferta na {getMarketplaceLabel(product.marketplace)}</span>
