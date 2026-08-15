@@ -54,4 +54,22 @@ describe("department sheet geral", () => {
     expect(document.activeElement).toBe(screen.getByRole("dialog"));
     expect(screen.getByRole("button", { name: "Abrir menu de departamentos" }).getAttribute("aria-expanded")).toBe("true");
   });
+
+  it("troca para o sub-sheet no mesmo painel e recomeça a lista no topo", () => {
+    render(
+      <DepartmentNavigationProvider>
+        <DepartmentMenuButton />
+        <DepartmentSheet />
+      </DepartmentNavigationProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Abrir menu de departamentos" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Casa" }));
+
+    const dialog = within(screen.getByRole("dialog"));
+    expect(dialog.getByRole("heading", { name: "Casa" })).toBeTruthy();
+    expect(dialog.getByText("Todos")).toBeTruthy();
+    expect(dialog.getByText("Decoracao")).toBeTruthy();
+    expect(dialog.queryByText("Todos os departamentos")).toBeNull();
+  });
 });

@@ -201,6 +201,11 @@ function OpenDepartmentSheet({ panel, close, triggerRef }: Readonly<{
   useSheetAccessibility(sheetRef, close, triggerRef);
   useBottomSheetDismiss({ sheetRef, scrollRegionRef, backdropRef, onClose: close });
 
+  useEffect(() => {
+    const scrollRegion = scrollRegionRef.current;
+    if (scrollRegion) scrollRegion.scrollTop = 0;
+  }, [panel, scrollRegionRef]);
+
   useGSAP(() => {
     const sheet = sheetRef.current;
     const backdrop = backdropRef.current;

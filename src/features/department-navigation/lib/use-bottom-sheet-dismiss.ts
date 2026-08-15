@@ -4,6 +4,7 @@ import { gsap, useGSAP } from "@/shared/lib/gsap-client";
 
 const DISMISS_DISTANCE_RATIO = 0.25;
 const DISMISS_VELOCITY_PX_PER_MS = 0.6;
+const DRAG_START_DISTANCE_PX = 6;
 
 export function shouldDismissBottomSheet(distance: number, velocity: number, height: number): boolean {
   return distance >= height * DISMISS_DISTANCE_RATIO || velocity >= DISMISS_VELOCITY_PX_PER_MS;
@@ -30,46 +31,37 @@ export function useBottomSheetDismiss({
     let startTime = 0;
     let dragging = false;
     let pointerId: number | null = null;
-    let dragSource: "static" | "list" | null = null;
+    let suppressClickUntil = 0;
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const resetPosition = () => {
       if (reducedMotion) {
         gsap.set(sheet, { y: 0 });
-        gsap.set(backdrop, { opacity: "" });
         return;
       }
       gsap.to(sheet, { y: 0, duration: 0.22, ease: "power2.out" });
-      gsap.to(backdrop, { opacity: 1, duration: 0.22, ease: "power2.out" });
     };
 
     const handlePointerDown = (event: PointerEvent) => {
       if (window.matchMedia("(min-width: 641px)").matches) return;
       const target = event.target as HTMLElement | null;
-      if (target?.closest("input, textarea, button, a, .sheet-search")) return;
-
-      const startedInList = Boolean(target?.closest(".sheet-scroll-region"));
-      if (startedInList && scrollRegion.scrollTop > 0) return;
+      if (target?.closest("input, textarea, select")) return;
 
       startY = event.clientY;
       startTime = performance.now();
       pointerId = event.pointerId;
       dragging = false;
-      dragSource = startedInList ? "list" : "static";
+      gsap.killTweensOf(sheet);
     };
 
     const handlePointerMove = (event: PointerEvent) => {
       if (pointerId !== event.pointerId) return;
-      if (dragSource === "list" && scrollRegion.scrollTop > 0) return;
       const distance = event.clientY - startY;
-      if (distance <= 0) return;
+      if (distance <= DRAG_START_DISTANCE_PX) return;
       dragging = true;
       event.preventDefault();
       if (pointerId !== null && typeof sheet.setPointerCapture === "function") sheet.setPointerCapture(pointerId);
-      const panelHeight = sheet.getBoundingClientRect().height;
-      const progress = Math.min(distance / panelHeight, 1);
       gsap.set(sheet, { y: distance });
-      gsap.set(backdrop, { opacity: 1 - progress * 0.7 });
     };
 
     const handlePointerUp = (event: PointerEvent) => {
@@ -88,12 +80,13 @@ export function useBottomSheetDismiss({
       }
       dragging = false;
       pointerId = null;
-      dragSource = null;
 
       if (!dismiss) {
         resetPosition();
         return;
       }
+
+      suppressClickUntil = Date.now() + 350;
 
       if (reducedMotion) {
         onClose();
@@ -102,11 +95,10 @@ export function useBottomSheetDismiss({
 
       gsap.to(sheet, {
         y: panelHeight + 32,
-        duration: 0.2,
+        duration: 0.24,
         ease: "power2.in",
         onComplete: onClose,
       });
-      gsap.to(backdrop, { opacity: 0, duration: 0.2, ease: "power2.in" });
     };
 
     const handlePointerCancel = (event: PointerEvent) => {
@@ -120,25 +112,34 @@ export function useBottomSheetDismiss({
       }
       dragging = false;
       pointerId = null;
-      dragSource = null;
       resetPosition();
+    };
+
+    const handleClick = (event: MouseEvent) => {
+      if (Date.now() >= suppressClickUntil) return;
+      suppressClickUntil = 0;
+      event.preventDefault();
+      event.stopPropagation();
     };
 
     const safePointerDown = contextSafe ? contextSafe(handlePointerDown) : handlePointerDown;
     const safePointerMove = contextSafe ? contextSafe(handlePointerMove) : handlePointerMove;
     const safePointerUp = contextSafe ? contextSafe(handlePointerUp) : handlePointerUp;
     const safePointerCancel = contextSafe ? contextSafe(handlePointerCancel) : handlePointerCancel;
+    const safeClick = contextSafe ? contextSafe(handleClick) : handleClick;
 
     sheet.addEventListener("pointerdown", safePointerDown);
     sheet.addEventListener("pointermove", safePointerMove, { passive: false });
     sheet.addEventListener("pointerup", safePointerUp);
     sheet.addEventListener("pointercancel", safePointerCancel);
+    sheet.addEventListener("click", safeClick);
 
     return () => {
       sheet.removeEventListener("pointerdown", safePointerDown);
       sheet.removeEventListener("pointermove", safePointerMove);
       sheet.removeEventListener("pointerup", safePointerUp);
       sheet.removeEventListener("pointercancel", safePointerCancel);
+      sheet.removeEventListener("click", safeClick);
       gsap.killTweensOf(sheet);
       gsap.killTweensOf(backdrop);
     };

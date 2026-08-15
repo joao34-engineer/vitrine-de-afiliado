@@ -42,7 +42,6 @@ export function ProductDetail({ product, relatedProducts = [] }: Readonly<{
             <span className="detail-cta-mobile">Ver oferta</span>
             <span className="detail-cta-desktop">Ver oferta na {getMarketplaceLabel(product.marketplace)}</span>
           </Link>
-          <p className="product-detail-note">A Salvat&amp;Brand pode receber uma comissao pela compra, sem custo extra para voce.</p>
         </div>
       </div>
       {relatedProducts.length > 0 ? (
