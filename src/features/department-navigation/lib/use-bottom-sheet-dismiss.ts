@@ -5,6 +5,11 @@ import { gsap, useGSAP } from "@/shared/lib/gsap-client";
 const DISMISS_DISTANCE_RATIO = 0.25;
 const DISMISS_VELOCITY_PX_PER_MS = 0.6;
 const DRAG_START_DISTANCE_PX = 6;
+const LIST_MOMENTUM_MIN_VELOCITY_PX_PER_MS = 0.08;
+const LIST_MOMENTUM_DISTANCE_FACTOR = 260;
+const LIST_MOMENTUM_MAX_DISTANCE = 480;
+const LIST_MOMENTUM_MIN_DURATION = 0.22;
+const LIST_MOMENTUM_MAX_DURATION = 0.58;
 
 export function shouldDismissBottomSheet(distance: number, velocity: number, height: number): boolean {
   return distance >= height * DISMISS_DISTANCE_RATIO || velocity >= DISMISS_VELOCITY_PX_PER_MS;
@@ -36,6 +41,9 @@ export function useBottomSheetDismiss({
     let startScrollTop = 0;
     let dragDistance = 0;
     let gestureMoved = false;
+    let lastPointerY = 0;
+    let lastPointerTime = 0;
+    let listScrollVelocity = 0;
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const resetPosition = () => {
@@ -53,6 +61,8 @@ export function useBottomSheetDismiss({
 
       startY = event.clientY;
       startTime = performance.now();
+      lastPointerY = event.clientY;
+      lastPointerTime = startTime;
       pointerId = event.pointerId;
       dragging = false;
       gestureInList = Boolean(target?.closest(".sheet-scroll-region"));
@@ -60,8 +70,10 @@ export function useBottomSheetDismiss({
       startScrollTop = gestureInList ? activeScrollRegion.scrollTop : 0;
       dragDistance = 0;
       gestureMoved = false;
+      listScrollVelocity = 0;
       gsap.killTweensOf(sheet);
       gsap.killTweensOf(backdrop);
+      gsap.killTweensOf(scrollRegionRef.current ?? scrollRegion);
       gsap.set(backdrop, { autoAlpha: 1 });
       if (typeof sheet.setPointerCapture === "function") {
         try {
@@ -75,6 +87,14 @@ export function useBottomSheetDismiss({
     const handlePointerMove = (event: PointerEvent) => {
       if (pointerId !== event.pointerId) return;
       const distance = event.clientY - startY;
+      const now = performance.now();
+      const elapsed = Math.max(1, now - lastPointerTime);
+      if (gestureInList) {
+        const instantScrollVelocity = -(event.clientY - lastPointerY) / elapsed;
+        listScrollVelocity = listScrollVelocity * 0.55 + instantScrollVelocity * 0.45;
+      }
+      lastPointerY = event.clientY;
+      lastPointerTime = now;
       if (Math.abs(distance) > DRAG_START_DISTANCE_PX) gestureMoved = true;
       if (gestureInList) {
         const activeScrollRegion = scrollRegionRef.current ?? scrollRegion;
@@ -110,6 +130,9 @@ export function useBottomSheetDismiss({
       const dismiss = dragging && shouldDismissBottomSheet(distance, velocity, panelHeight);
       const wasDragging = dragging;
       const wasMoved = gestureMoved;
+      const wasInList = gestureInList;
+      const activeScrollRegion = scrollRegionRef.current ?? scrollRegion;
+      const listVelocity = listScrollVelocity;
       if (typeof sheet.hasPointerCapture === "function" && sheet.hasPointerCapture(event.pointerId)) {
         try {
           sheet.releasePointerCapture(event.pointerId);
@@ -123,9 +146,28 @@ export function useBottomSheetDismiss({
       startScrollTop = 0;
       dragDistance = 0;
       gestureMoved = false;
+      lastPointerY = 0;
+      lastPointerTime = 0;
+      listScrollVelocity = 0;
 
       if (!dismiss) {
         if (wasDragging || wasMoved) suppressClickUntil = Date.now() + 350;
+        if (wasInList && !wasDragging && wasMoved && !reducedMotion) {
+          const maxScrollTop = Math.max(0, activeScrollRegion.scrollHeight - activeScrollRegion.clientHeight);
+          const momentumDistance = Math.max(
+            -LIST_MOMENTUM_MAX_DISTANCE,
+            Math.min(LIST_MOMENTUM_MAX_DISTANCE, listVelocity * LIST_MOMENTUM_DISTANCE_FACTOR),
+          );
+          const targetScrollTop = Math.max(0, Math.min(maxScrollTop, activeScrollRegion.scrollTop + momentumDistance));
+          const distanceToTarget = Math.abs(targetScrollTop - activeScrollRegion.scrollTop);
+          if (Math.abs(listVelocity) >= LIST_MOMENTUM_MIN_VELOCITY_PX_PER_MS && distanceToTarget > 0) {
+            const duration = Math.max(
+              LIST_MOMENTUM_MIN_DURATION,
+              Math.min(LIST_MOMENTUM_MAX_DURATION, distanceToTarget / 700),
+            );
+            gsap.to(activeScrollRegion, { scrollTop: targetScrollTop, duration, ease: "power3.out", overwrite: "auto" });
+          }
+        }
         resetPosition();
         return;
       }
@@ -160,6 +202,9 @@ export function useBottomSheetDismiss({
       startScrollTop = 0;
       dragDistance = 0;
       gestureMoved = false;
+      lastPointerY = 0;
+      lastPointerTime = 0;
+      listScrollVelocity = 0;
       resetPosition();
     };
 
@@ -190,6 +235,7 @@ export function useBottomSheetDismiss({
       sheet.removeEventListener("click", safeClick);
       gsap.killTweensOf(sheet);
       gsap.killTweensOf(backdrop);
+      gsap.killTweensOf(scrollRegionRef.current ?? scrollRegion);
     };
   }, { scope: sheetRef, dependencies: [backdropRef, onClose, scrollRegionRef, sheetRef], revertOnUpdate: true });
 }
