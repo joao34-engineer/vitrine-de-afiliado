@@ -32,6 +32,10 @@ export function useBottomSheetDismiss({
     let dragging = false;
     let pointerId: number | null = null;
     let suppressClickUntil = 0;
+    let gestureInList = false;
+    let startScrollTop = 0;
+    let dragDistance = 0;
+    let gestureMoved = false;
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const resetPosition = () => {
@@ -51,29 +55,61 @@ export function useBottomSheetDismiss({
       startTime = performance.now();
       pointerId = event.pointerId;
       dragging = false;
+      gestureInList = Boolean(target?.closest(".sheet-scroll-region"));
+      const activeScrollRegion = scrollRegionRef.current ?? scrollRegion;
+      startScrollTop = gestureInList ? activeScrollRegion.scrollTop : 0;
+      dragDistance = 0;
+      gestureMoved = false;
       gsap.killTweensOf(sheet);
       gsap.killTweensOf(backdrop);
       gsap.set(backdrop, { autoAlpha: 1 });
+      if (typeof sheet.setPointerCapture === "function") {
+        try {
+          sheet.setPointerCapture(event.pointerId);
+        } catch {
+          // Pointer capture can fail in embedded browsers; document listeners still handle the gesture.
+        }
+      }
     };
 
     const handlePointerMove = (event: PointerEvent) => {
       if (pointerId !== event.pointerId) return;
       const distance = event.clientY - startY;
-      if (distance <= DRAG_START_DISTANCE_PX) return;
+      if (Math.abs(distance) > DRAG_START_DISTANCE_PX) gestureMoved = true;
+      if (gestureInList) {
+        const activeScrollRegion = scrollRegionRef.current ?? scrollRegion;
+        const maxScrollTop = Math.max(0, activeScrollRegion.scrollHeight - activeScrollRegion.clientHeight);
+        const nextScrollTop = Math.max(0, Math.min(maxScrollTop, startScrollTop - distance));
+        const consumedDownwardDistance = startScrollTop - nextScrollTop;
+        const overscrollDistance = distance - consumedDownwardDistance;
+
+        if (!dragging && overscrollDistance <= DRAG_START_DISTANCE_PX) {
+          if (distance !== 0) event.preventDefault();
+          activeScrollRegion.scrollTop = nextScrollTop;
+          return;
+        }
+
+        dragDistance = Math.max(0, overscrollDistance);
+      } else {
+        dragDistance = Math.max(0, distance);
+      }
+
+      if (!dragging && dragDistance <= DRAG_START_DISTANCE_PX) return;
       dragging = true;
       event.preventDefault();
-      if (pointerId !== null && typeof sheet.setPointerCapture === "function") sheet.setPointerCapture(pointerId);
       const panelHeight = sheet.getBoundingClientRect().height;
-      gsap.set(sheet, { y: Math.min(distance, panelHeight + 32) });
+      gsap.set(sheet, { y: Math.min(dragDistance, panelHeight + 32) });
     };
 
     const handlePointerUp = (event: PointerEvent) => {
       if (pointerId !== event.pointerId) return;
-      const distance = Math.max(0, event.clientY - startY);
+      const distance = dragDistance;
       const elapsed = Math.max(1, performance.now() - startTime);
       const velocity = distance / elapsed;
       const panelHeight = sheet.getBoundingClientRect().height;
       const dismiss = dragging && shouldDismissBottomSheet(distance, velocity, panelHeight);
+      const wasDragging = dragging;
+      const wasMoved = gestureMoved;
       if (typeof sheet.hasPointerCapture === "function" && sheet.hasPointerCapture(event.pointerId)) {
         try {
           sheet.releasePointerCapture(event.pointerId);
@@ -83,8 +119,13 @@ export function useBottomSheetDismiss({
       }
       dragging = false;
       pointerId = null;
+      gestureInList = false;
+      startScrollTop = 0;
+      dragDistance = 0;
+      gestureMoved = false;
 
       if (!dismiss) {
+        if (wasDragging || wasMoved) suppressClickUntil = Date.now() + 350;
         resetPosition();
         return;
       }
@@ -115,6 +156,10 @@ export function useBottomSheetDismiss({
       }
       dragging = false;
       pointerId = null;
+      gestureInList = false;
+      startScrollTop = 0;
+      dragDistance = 0;
+      gestureMoved = false;
       resetPosition();
     };
 

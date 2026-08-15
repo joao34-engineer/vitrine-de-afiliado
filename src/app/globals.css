@@ -314,7 +314,7 @@ html.dark .product-card { box-shadow: 0 18px 38px -24px rgb(0 0 0 / 36%); }
   .loading-grid { grid-template-columns: repeat(2, 1fr); }
   .sheet-backdrop { align-items: flex-end; justify-content: stretch; background: rgb(25 26 23 / 8%); }
   html.dark .sheet-backdrop { background: rgb(247 241 232 / 15%); }
-  .department-sheet { display: flex; width: 100%; height: min(744px, calc(100dvh - 100px)); flex-direction: column; gap: 16px; padding: 10px 18px 24px; border: 1px solid var(--line); border-bottom: 0; border-radius: 26px 26px 0 0; box-shadow: 0 18px 38px -24px rgb(31 23 15 / 16%); animation: none; overflow: hidden; overscroll-behavior: contain; touch-action: pan-y; will-change: transform; }
+  .department-sheet { display: flex; width: 100%; height: min(744px, calc(100dvh - 100px)); flex-direction: column; gap: 16px; padding: 10px 18px 24px; border: 1px solid var(--line); border-bottom: 0; border-radius: 26px 26px 0 0; box-shadow: 0 18px 38px -24px rgb(31 23 15 / 16%); animation: none; overflow: hidden; overscroll-behavior: contain; touch-action: none; will-change: transform; }
   .department-sheet-compact { height: auto; max-height: min(744px, calc(100dvh - 100px)); }
   .department-sheet-compact .sheet-scroll-region { flex: 0 1 auto; }
   .sheet-handle { display: block; width: 48px; height: 5px; margin: 2.5px auto; flex: 0 0 auto; border-radius: 999px; background: var(--line); touch-action: none; }
@@ -325,7 +325,7 @@ html.dark .product-card { box-shadow: 0 18px 38px -24px rgb(0 0 0 / 36%); }
   .sheet-search { order: 1; margin: 0; background: var(--surface); touch-action: none; }
   .sheet-search-icon { flex: 0 0 auto; color: #9a9387; font-size: 16px; line-height: 1; }
   html.dark .search-leading-icon, html.dark .sheet-search-icon { color: #81796d; }
-  .sheet-scroll-region { display: grid; min-height: 0; flex: 1 1 auto; gap: 15px; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 2px; scrollbar-width: none; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+  .sheet-scroll-region { display: grid; min-height: 0; flex: 1 1 auto; gap: 15px; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 2px; scrollbar-width: none; touch-action: none; -webkit-overflow-scrolling: touch; }
   .sheet-scroll-region::-webkit-scrollbar { display: none; }
   .sheet-leaf { display: flex; width: 100%; height: 46px; min-height: 46px; max-height: 46px; flex: 0 0 46px; align-items: center; justify-content: space-between; overflow: hidden; padding: 0 12px; border: 0; border-radius: 8px; background: var(--sage); color: var(--foreground); font-size: 14px; font-weight: 400; line-height: 1; text-align: left; white-space: nowrap; }
   .sheet-leaf > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
