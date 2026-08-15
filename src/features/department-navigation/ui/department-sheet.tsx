@@ -235,7 +235,7 @@ function OpenDepartmentSheet({ panel, close, triggerRef }: Readonly<{
     <div ref={backdropRef} className="sheet-backdrop" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) close(); }}>
       <aside
         ref={sheetRef}
-        className="department-sheet"
+        className={`department-sheet ${panel.type === "department" ? "department-sheet-compact" : ""}`.trim()}
         id="department-sheet"
         aria-labelledby="department-sheet-title"
         role="dialog"

@@ -52,6 +52,8 @@ export function useBottomSheetDismiss({
       pointerId = event.pointerId;
       dragging = false;
       gsap.killTweensOf(sheet);
+      gsap.killTweensOf(backdrop);
+      gsap.set(backdrop, { autoAlpha: 1 });
     };
 
     const handlePointerMove = (event: PointerEvent) => {
@@ -61,7 +63,8 @@ export function useBottomSheetDismiss({
       dragging = true;
       event.preventDefault();
       if (pointerId !== null && typeof sheet.setPointerCapture === "function") sheet.setPointerCapture(pointerId);
-      gsap.set(sheet, { y: distance });
+      const panelHeight = sheet.getBoundingClientRect().height;
+      gsap.set(sheet, { y: Math.min(distance, panelHeight + 32) });
     };
 
     const handlePointerUp = (event: PointerEvent) => {
