@@ -32,6 +32,7 @@ export function AffiliateProductCard({ product, variant = "default" }: Readonly<
         <div className="product-price-row">
           {originalPrice && discount !== null ? <span className="product-original-price">{originalPrice}</span> : null}
           <span className="product-price">{price ?? "Confira no marketplace"}</span>
+          <span className="product-taxonomy-inline">{leaf.label}</span>
         </div>
         <p className="product-taxonomy-label">{leaf.label}</p>
         <Link href={`/r/${product.id}`} className="product-cta">Ver oferta</Link>

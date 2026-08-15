@@ -39,6 +39,7 @@ export function CatalogHeader({ mobileSearch = "header", mobileRail = "header" }
       {mobileSearch === "header" ? (
         <form className="mobile-header-search-form" action="/buscar" method="get" role="search">
           <label className="sr-only" htmlFor="mobile-catalog-search">Buscar produtos</label>
+          <span aria-hidden="true" className="search-leading-icon">⌕</span>
           <input
             id="mobile-catalog-search"
             name="q"

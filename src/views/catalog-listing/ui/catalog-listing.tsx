@@ -39,10 +39,11 @@ export function CatalogListing({
       <div className="listing-controls">
         <form className="listing-search-form" action="/buscar" method="get" role="search">
           <label className="sr-only" htmlFor="listing-search">Buscar nesta folha</label>
+          <span aria-hidden="true" className="search-leading-icon">⌕</span>
           <input id="listing-search" name="q" type="search" placeholder="Buscar nesta folha" autoComplete="off" />
           {departmentSlug ? <input type="hidden" name="departmentSlug" value={departmentSlug} /> : null}
           {leafSlug ? <input type="hidden" name="leafSlug" value={leafSlug} /> : null}
-          <button type="submit" aria-label="Buscar nesta folha">⌕</button>
+          <button type="submit" aria-label="Buscar nesta folha">Buscar</button>
         </form>
         <DepartmentMenuButton label="Filtros" className="listing-filter-button" />
       </div>

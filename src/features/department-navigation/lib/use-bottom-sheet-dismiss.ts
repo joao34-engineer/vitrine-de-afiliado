@@ -46,7 +46,7 @@ export function useBottomSheetDismiss({
     const handlePointerDown = (event: PointerEvent) => {
       if (window.matchMedia("(min-width: 641px)").matches) return;
       const target = event.target as HTMLElement | null;
-      if (target?.closest("input, textarea, button, a")) return;
+      if (target?.closest("input, textarea, button, a, .sheet-search")) return;
 
       const startedInList = Boolean(target?.closest(".sheet-scroll-region"));
       if (startedInList && scrollRegion.scrollTop > 0) return;
@@ -79,6 +79,13 @@ export function useBottomSheetDismiss({
       const velocity = distance / elapsed;
       const panelHeight = sheet.getBoundingClientRect().height;
       const dismiss = dragging && shouldDismissBottomSheet(distance, velocity, panelHeight);
+      if (typeof sheet.hasPointerCapture === "function" && sheet.hasPointerCapture(event.pointerId)) {
+        try {
+          sheet.releasePointerCapture(event.pointerId);
+        } catch {
+          // The browser may release capture automatically before pointerup.
+        }
+      }
       dragging = false;
       pointerId = null;
       dragSource = null;
@@ -102,8 +109,15 @@ export function useBottomSheetDismiss({
       gsap.to(backdrop, { opacity: 0, duration: 0.2, ease: "power2.in" });
     };
 
-    const handlePointerCancel = () => {
+    const handlePointerCancel = (event: PointerEvent) => {
       if (pointerId === null) return;
+      if (typeof sheet.hasPointerCapture === "function" && sheet.hasPointerCapture(event.pointerId)) {
+        try {
+          sheet.releasePointerCapture(event.pointerId);
+        } catch {
+          // The browser may release capture automatically before pointercancel.
+        }
+      }
       dragging = false;
       pointerId = null;
       dragSource = null;

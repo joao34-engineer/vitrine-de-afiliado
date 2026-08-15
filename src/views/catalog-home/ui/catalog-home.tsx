@@ -47,7 +47,7 @@ export function CatalogHome({
       {hasCuratedHero ? (
         <section className="home-curated-hero" aria-labelledby="home-curated-title">
           <p className="eyebrow">Curadoria da semana</p>
-          <h2 id="home-curated-title">Achados bons o bastante para virar favorito.</h2>
+          <h2 id="home-curated-title">Achados bons o bastante para virar favorito</h2>
           <p>Selecao curta, preco claro e clique direto para a oferta.</p>
           <div className="home-hero-products">
             {heroProducts.map((product) => <AffiliateProductCard key={product.id} product={product} variant="hero" />)}

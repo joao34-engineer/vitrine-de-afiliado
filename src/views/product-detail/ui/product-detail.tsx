@@ -34,11 +34,14 @@ export function ProductDetail({ product, relatedProducts = [] }: Readonly<{
             {discount !== null ? <span className="discount-inline">-{discount}%</span> : null}
           </div>
           <div className="product-detail-info">
-            <p>Selecionado para uso diario.</p>
-            <p>Clique seguro via redirecionamento.</p>
-            <p>Preco, estoque e condicoes podem mudar na loja de origem.</p>
+            <p>Selecionado para uso diario</p>
+            <p>Click seguro via redirecionamento</p>
+            <p>Preco pode mudar na loja origem</p>
           </div>
-          <Link href={`/r/${product.id}`} className="detail-cta">Ver oferta na {getMarketplaceLabel(product.marketplace)}</Link>
+          <Link href={`/r/${product.id}`} className="detail-cta">
+            <span className="detail-cta-mobile">Ver oferta</span>
+            <span className="detail-cta-desktop">Ver oferta na {getMarketplaceLabel(product.marketplace)}</span>
+          </Link>
           <p className="product-detail-note">A Salvat&amp;Brand pode receber uma comissao pela compra, sem custo extra para voce.</p>
         </div>
       </div>
@@ -46,8 +49,8 @@ export function ProductDetail({ product, relatedProducts = [] }: Readonly<{
         <section className="product-related" aria-labelledby="product-related-title">
           <div className="section-heading-row">
             <div>
-              <p className="eyebrow">Tambem combina</p>
-              <h2 id="product-related-title">Mais achados da mesma curadoria.</h2>
+              <h2 id="product-related-title">Tambem combina</h2>
+              <p className="catalog-description">Mais achados da mesma curadoria.</p>
             </div>
           </div>
           <div className="product-related-grid">
