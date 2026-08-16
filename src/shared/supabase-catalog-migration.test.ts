@@ -24,6 +24,20 @@ const destinationMigration = readFileSync(
   ),
   "utf8",
 );
+const ambiguityFixMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    "supabase/migrations/20260815000000_fix_affiliate_ingestion_rpc_ambiguity.sql",
+  ),
+  "utf8",
+);
+const conflictTargetMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    "supabase/migrations/20260815000100_fix_affiliate_ingestion_conflict_target.sql",
+  ),
+  "utf8",
+);
 
 describe("public catalog migration contract", () => {
   it("keeps the migration non-destructive and bounded", () => {
@@ -96,5 +110,28 @@ describe("affiliate ingestion migration contract", () => {
     expect(destinationMigration).toMatch(/br\[\.\]shp\[\.\]ee/i);
     expect(destinationMigration).not.toMatch(/shopeesz/i);
     expect(destinationMigration).not.toMatch(/drop\s+(function|table|column)/i);
+  });
+
+  it("qualifies every administrative products reference that can collide with return fields", () => {
+    expect(ambiguityFixMigration).toMatch(/create or replace function public\.upsert_affiliate_product_ingestion/i);
+    expect(ambiguityFixMigration).toMatch(/from public\.products as product_row/i);
+    expect(ambiguityFixMigration).toMatch(/product_row\.product_id_shopee\s*=\s*normalized_product_id/i);
+    expect(ambiguityFixMigration).toMatch(/update public\.products as products/i);
+    expect(ambiguityFixMigration).toMatch(/where products\.id\s*=\s*current_product\.id/i);
+    expect(ambiguityFixMigration).toMatch(/classification_revision\s*=\s*products\.classification_revision\s*\+\s*1/i);
+    expect(ambiguityFixMigration).toMatch(/on conflict\s+do nothing/i);
+    expect(ambiguityFixMigration).not.toMatch(/on conflict\s*\(\s*product_id_shopee\s*\)/i);
+    expect(ambiguityFixMigration).not.toMatch(/where\s+product_id_shopee\s*=\s*normalized_product_id/i);
+    expect(ambiguityFixMigration).not.toMatch(/where\s+id\s*=\s*p_product_id/i);
+    expect(ambiguityFixMigration).not.toMatch(/classification_revision\s*=\s*classification_revision\s*\+\s*1/i);
+    expect(ambiguityFixMigration).not.toMatch(/drop\s+(function|table|column)/i);
+    expect(ambiguityFixMigration).toMatch(/grant execute on function public\.upsert_affiliate_product_ingestion[\s\S]*to service_role/i);
+  });
+
+  it("keeps the follow-up conflict-target repair idempotent and non-destructive", () => {
+    expect(conflictTargetMigration).toMatch(/on conflict\s+do nothing/i);
+    expect(conflictTargetMigration).not.toMatch(/on conflict\s*\(\s*product_id_shopee\s*\)/i);
+    expect(conflictTargetMigration).not.toMatch(/drop\s+(function|table|column)/i);
+    expect(conflictTargetMigration).toMatch(/grant execute on function public\.upsert_affiliate_product_ingestion[\s\S]*to service_role/i);
   });
 });

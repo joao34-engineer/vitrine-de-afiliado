@@ -50,12 +50,84 @@ const REVIEW_SELECT = [
   "created_at",
 ].join(",");
 
+export type AffiliateProductAdminRepositoryErrorMetadata = {
+  readonly operation: string;
+  readonly rpcName: string | null;
+  readonly status: number | null;
+  readonly code: string | null;
+  readonly message: string;
+  readonly retryable: boolean;
+};
+
+type SupabaseErrorLike = {
+  readonly code?: unknown;
+  readonly message?: unknown;
+  readonly status?: unknown;
+};
+
+const TRANSIENT_HTTP_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
+const SAFE_ERROR_CODE = /^[A-Za-z0-9_.-]{1,64}$/;
+const RPC_BY_OPERATION: Readonly<Record<string, string>> = {
+  upsert_ingestion: "upsert_affiliate_product_ingestion",
+  approve: "approve_affiliate_product_classification",
+  deactivate: "deactivate_affiliate_product",
+};
+
+function isSupabaseErrorLike(value: unknown): value is SupabaseErrorLike {
+  return typeof value === "object" && value !== null;
+}
+
+function sanitizeErrorText(value: unknown): string {
+  if (typeof value !== "string") return "unknown error";
+  return value
+    .replace(/bearer\s+[^\s]+/gi, "bearer [redacted]")
+    .replace(/((?:token|secret|password|api[-_]?key)\s*[:=]\s*)[^\s,;]+/gi, "$1[redacted]")
+    .replace(/[\r\n\t]+/g, " ")
+    .slice(0, 240);
+}
+
+function getSupabaseErrorMetadata(
+  operation: string,
+  cause: unknown,
+  status: number | null,
+  rpcName: string | null,
+): AffiliateProductAdminRepositoryErrorMetadata {
+  const causeStatus = isSupabaseErrorLike(cause) && typeof cause.status === "number" ? cause.status : null;
+  const effectiveStatus = status ?? causeStatus;
+  const rawCode = isSupabaseErrorLike(cause) && typeof cause.code === "string" ? cause.code : null;
+  const code = rawCode !== null && SAFE_ERROR_CODE.test(rawCode) ? rawCode : null;
+  const retryable =
+    (effectiveStatus !== null && TRANSIENT_HTTP_STATUSES.has(effectiveStatus)) ||
+    (rawCode !== null &&
+      (rawCode.startsWith("08") ||
+        rawCode.startsWith("40") ||
+        rawCode.startsWith("53") ||
+        rawCode.startsWith("57") ||
+        rawCode === "55P03"));
+
+  return {
+    operation,
+    rpcName: rpcName ?? RPC_BY_OPERATION[operation] ?? null,
+    status: effectiveStatus,
+    code,
+    message: sanitizeErrorText(isSupabaseErrorLike(cause) ? cause.message : undefined),
+    retryable,
+  };
+}
+
 export class AffiliateProductAdminRepositoryError extends Error {
   readonly code = "affiliate_product_admin_repository_error" as const;
+  readonly metadata: AffiliateProductAdminRepositoryErrorMetadata;
 
-  constructor(message: string, options?: { cause?: unknown }) {
+  constructor(message: string, options?: { cause?: unknown; operation?: string; status?: number; rpcName?: string }) {
     super(message, options);
     this.name = "AffiliateProductAdminRepositoryError";
+    this.metadata = getSupabaseErrorMetadata(
+      options?.operation ?? "unknown",
+      options?.cause,
+      options?.status ?? null,
+      options?.rpcName ?? null,
+    );
   }
 }
 
@@ -72,7 +144,9 @@ type AdminProductState = {
 
 function asReviewProduct(value: unknown): AffiliateReviewProduct {
   if (typeof value !== "object" || value === null) {
-    throw new AffiliateProductAdminRepositoryError("Supabase returned a malformed review row.");
+    throw new AffiliateProductAdminRepositoryError("Supabase returned a malformed review row.", {
+      operation: "list_reviews",
+    });
   }
 
   const row = value as Partial<SupabaseReviewProductRow>;
@@ -99,7 +173,9 @@ function asReviewProduct(value: unknown): AffiliateReviewProduct {
     row.classification_reasons.some((reason) => !isNonEmptyString(reason)) ||
     (row.created_at !== null && row.created_at !== undefined && !isValidCatalogDate(row.created_at))
   ) {
-    throw new AffiliateProductAdminRepositoryError("Supabase returned an invalid review product.");
+    throw new AffiliateProductAdminRepositoryError("Supabase returned an invalid review product.", {
+      operation: "list_reviews",
+    });
   }
 
   const department = row.classification_suggested_department_slug;
@@ -114,7 +190,9 @@ function asReviewProduct(value: unknown): AffiliateReviewProduct {
       (!isDepartmentLeafPair(department, leaf) ||
         findLeafBySlug(leaf)?.subcategorySlug !== subcategory))
   ) {
-    throw new AffiliateProductAdminRepositoryError("Supabase returned invalid review taxonomy suggestion.");
+    throw new AffiliateProductAdminRepositoryError("Supabase returned invalid review taxonomy suggestion.", {
+      operation: "list_reviews",
+    });
   }
 
   return {
@@ -136,7 +214,9 @@ function asReviewProduct(value: unknown): AffiliateReviewProduct {
 
 function asIngestionResult(value: unknown): SupabaseAffiliateProductIngestionResult {
   if (typeof value !== "object" || value === null) {
-    throw new AffiliateProductAdminRepositoryError("Supabase returned a malformed ingestion result.");
+    throw new AffiliateProductAdminRepositoryError("Supabase returned a malformed ingestion result.", {
+      operation: "upsert_ingestion",
+    });
   }
 
   const result = value as Partial<SupabaseAffiliateProductIngestionResult>;
@@ -153,15 +233,22 @@ function asIngestionResult(value: unknown): SupabaseAffiliateProductIngestionRes
     typeof result.created !== "boolean" ||
     (result.classification_review_status !== "auto" && result.classification_review_status !== "review" && result.classification_review_status !== null)
   ) {
-    throw new AffiliateProductAdminRepositoryError("Supabase returned an invalid ingestion result.");
+    throw new AffiliateProductAdminRepositoryError("Supabase returned an invalid ingestion result.", {
+      operation: "upsert_ingestion",
+    });
   }
 
   return result as SupabaseAffiliateProductIngestionResult;
 }
 
-function asMutationResult(value: unknown): SupabaseAffiliateProductClassificationMutationResult {
+function asMutationResult(
+  value: unknown,
+  operation: "approve" | "deactivate",
+): SupabaseAffiliateProductClassificationMutationResult {
   if (typeof value !== "object" || value === null) {
-    throw new AffiliateProductAdminRepositoryError("Supabase returned a malformed mutation result.");
+    throw new AffiliateProductAdminRepositoryError("Supabase returned a malformed mutation result.", {
+      operation,
+    });
   }
 
   const result = value as Partial<SupabaseAffiliateProductClassificationMutationResult>;
@@ -174,7 +261,9 @@ function asMutationResult(value: unknown): SupabaseAffiliateProductClassificatio
     mutationRevision < 0 ||
     typeof result.changed !== "boolean"
   ) {
-    throw new AffiliateProductAdminRepositoryError("Supabase returned an invalid mutation result.");
+    throw new AffiliateProductAdminRepositoryError("Supabase returned an invalid mutation result.", {
+      operation,
+    });
   }
 
   return result as SupabaseAffiliateProductClassificationMutationResult;
@@ -185,7 +274,7 @@ export class AffiliateProductAdminRepository {
     product: AffiliateProductIngestionRequest,
     classification: AffiliateIngestionClassification,
   ): Promise<SupabaseAffiliateProductIngestionResult> {
-    const { data, error } = await createServerSupabaseClient().rpc("upsert_affiliate_product_ingestion", {
+    const { data, error, status } = await createServerSupabaseClient().rpc("upsert_affiliate_product_ingestion", {
       p_product_id_shopee: product.productIdShopee,
       p_title: product.title,
       p_price_original: product.priceOriginal,
@@ -207,7 +296,11 @@ export class AffiliateProductAdminRepository {
     });
 
     if (error !== null || !Array.isArray(data) || data.length !== 1) {
-      throw new AffiliateProductAdminRepositoryError("Supabase ingestion upsert failed.", { cause: error });
+      throw new AffiliateProductAdminRepositoryError("Supabase ingestion upsert failed.", {
+        cause: error,
+        operation: "upsert_ingestion",
+        status,
+      });
     }
 
     return asIngestionResult(data[0]);
@@ -216,7 +309,7 @@ export class AffiliateProductAdminRepository {
   async listReviews(limit: number, cursorValue: string | null): Promise<AffiliateReviewPage> {
     const cursor = cursorValue === null ? null : decodeAffiliateReviewCursor(cursorValue);
     if (cursorValue !== null && cursor === null) {
-      throw new AffiliateProductAdminRepositoryError("Invalid review cursor.");
+      throw new AffiliateProductAdminRepositoryError("Invalid review cursor.", { operation: "list_reviews" });
     }
 
     let query = createServerSupabaseClient()
@@ -234,9 +327,13 @@ export class AffiliateProductAdminRepository {
       );
     }
 
-    const { data, error } = await query;
+    const { data, error, status } = await query;
     if (error !== null || !Array.isArray(data)) {
-      throw new AffiliateProductAdminRepositoryError("Supabase review listing failed.", { cause: error });
+      throw new AffiliateProductAdminRepositoryError("Supabase review listing failed.", {
+        cause: error,
+        operation: "list_reviews",
+        status,
+      });
     }
 
     const rows = data.map(asReviewProduct);
@@ -253,13 +350,19 @@ export class AffiliateProductAdminRepository {
   }
 
   async getState(productId: string): Promise<AdminProductState | null> {
-    const { data, error } = await createServerSupabaseClient()
+    const { data, error, status } = await createServerSupabaseClient()
       .from("products")
       .select("id,is_active,classification_review_status,classification_source,department_slug,leaf_slug,classification_revision,classification_last_operation_id,classification_last_operation_kind")
       .eq("id", productId)
       .maybeSingle();
 
-    if (error !== null) throw new AffiliateProductAdminRepositoryError("Supabase state lookup failed.", { cause: error });
+    if (error !== null) {
+      throw new AffiliateProductAdminRepositoryError("Supabase state lookup failed.", {
+        cause: error,
+        operation: "get_state",
+        status,
+      });
+    }
     if (data === null) return null;
 
     const row = data as Record<string, unknown>;
@@ -286,7 +389,9 @@ export class AffiliateProductAdminRepository {
         lastOperationKind !== "deactivate") ||
       (lastOperationKind !== null && typeof lastOperationKind !== "string")
     ) {
-      throw new AffiliateProductAdminRepositoryError("Supabase returned an invalid product state.");
+      throw new AffiliateProductAdminRepositoryError("Supabase returned an invalid product state.", {
+        operation: "get_state",
+      });
     }
 
     return {
@@ -309,7 +414,7 @@ export class AffiliateProductAdminRepository {
     expectedRevision: number,
     operationId: string,
   ): Promise<AffiliateReviewMutationResponse | null> {
-    const { data, error } = await createServerSupabaseClient().rpc("approve_affiliate_product_classification", {
+    const { data, error, status } = await createServerSupabaseClient().rpc("approve_affiliate_product_classification", {
       p_product_id: productId,
       p_department_slug: departmentSlug,
       p_subcategory_slug: subcategorySlug,
@@ -318,9 +423,15 @@ export class AffiliateProductAdminRepository {
       p_operation_id: operationId,
     });
 
-    if (error !== null) throw new AffiliateProductAdminRepositoryError("Supabase approval failed.", { cause: error });
+    if (error !== null) {
+      throw new AffiliateProductAdminRepositoryError("Supabase approval failed.", {
+        cause: error,
+        operation: "approve",
+        status,
+      });
+    }
     if (!Array.isArray(data) || data.length === 0) return null;
-    const result = asMutationResult(data[0]);
+    const result = asMutationResult(data[0], "approve");
     return {
       id: result.id,
       classificationRevision: result.classification_revision,
@@ -329,15 +440,21 @@ export class AffiliateProductAdminRepository {
   }
 
   async deactivate(productId: string, expectedRevision: number, operationId: string): Promise<AffiliateReviewMutationResponse | null> {
-    const { data, error } = await createServerSupabaseClient().rpc("deactivate_affiliate_product", {
+    const { data, error, status } = await createServerSupabaseClient().rpc("deactivate_affiliate_product", {
       p_product_id: productId,
       p_expected_revision: expectedRevision,
       p_operation_id: operationId,
     });
 
-    if (error !== null) throw new AffiliateProductAdminRepositoryError("Supabase deactivation failed.", { cause: error });
+    if (error !== null) {
+      throw new AffiliateProductAdminRepositoryError("Supabase deactivation failed.", {
+        cause: error,
+        operation: "deactivate",
+        status,
+      });
+    }
     if (!Array.isArray(data) || data.length === 0) return null;
-    const result = asMutationResult(data[0]);
+    const result = asMutationResult(data[0], "deactivate");
     return {
       id: result.id,
       classificationRevision: result.classification_revision,
