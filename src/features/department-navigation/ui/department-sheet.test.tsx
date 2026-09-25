@@ -5,6 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => <a href={href} {...props}>{children}</a>,
 }));
+vi.mock("next/image", () => ({
+  default: ({ alt }: { alt: string }) => <span role="img" aria-label={alt} />,
+}));
 vi.mock("@/shared/lib/gsap-client", () => ({
   gsap: {
     set: vi.fn(),
@@ -71,5 +74,26 @@ describe("department sheet geral", () => {
     expect(dialog.getByText("Todos")).toBeTruthy();
     expect(dialog.getByText("Decoracao")).toBeTruthy();
     expect(dialog.queryByText("Todos os departamentos")).toBeNull();
+  });
+
+  it("opens the desktop mega menu without fetching", () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+
+    render(
+      <DepartmentNavigationProvider>
+        <DepartmentMenuButton />
+        <DepartmentSheet />
+      </DepartmentNavigationProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Abrir menu de departamentos" }));
+
+    const dialog = within(screen.getByRole("dialog"));
+    expect(dialog.getByRole("heading", { name: "Departamentos" })).toBeTruthy();
+    expect(dialog.getByText("Use o menu para abrir um departamento ou ir direto para uma folha.")).toBeTruthy();
+    expect(dialog.getByRole("link", { name: "Ver ofertas" }).getAttribute("href")).toBe("/");
+    expect(dialog.getByRole("link", { name: "Home" }).getAttribute("href")).toBe("/");
+    expect(dialog.getByRole("button", { name: "Casa" })).toBeTruthy();
+    expect(dialog.getByText("Selecione um departamento.")).toBeTruthy();
   });
 });

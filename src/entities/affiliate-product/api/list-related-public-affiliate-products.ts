@@ -14,6 +14,6 @@ export async function listRelatedPublicAffiliateProducts({
   leafSlug: LeafSlug;
   excludeProductId: string;
 }>): Promise<readonly PublicAffiliateProductCardData[]> {
-  const page = await listPublicAffiliateProductPage({ departmentSlug, leafSlug, pageSize: 3 });
-  return page.items.filter((product) => product.id !== excludeProductId).slice(0, 2);
+  const page = await listPublicAffiliateProductPage({ departmentSlug, leafSlug, pageSize: 6 });
+  return page.items.filter((product) => product.id !== excludeProductId).slice(0, 5);
 }

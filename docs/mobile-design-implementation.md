@@ -15,7 +15,8 @@ Frames usados nesta etapa:
 | Sheet | `4:2` | `4:39` |
 
 Os frames `02 - mobile` e `03 - desktop` foram ignorados porque estao
-quebrados. A referencia visual desktop fica para uma etapa posterior.
+quebrados. O desktop valido foi implementado em
+[`desktop-design-implementation.md`](./desktop-design-implementation.md).
 
 ## Mapeamento de Componentes
 
@@ -120,7 +121,6 @@ migrations, backend, tracking, Pixel, CAPI, Shopify ou `my-collection-page`.
 
 ## Validacao
 
-Validar em `390x844`, `390x1237` e `375x812`, nos temas claro e escuro. Fazer
-tambem um smoke test desktop amplo para garantir que o chrome anterior nao foi
-quebrado. A implementacao desktop baseada nos frames validos fica reservada
-para uma etapa posterior.
+Validar em `390x844`, `390x1237` e `375x812`, nos temas claro e escuro. O
+desktop usa os frames validos de 1440 documentados em
+[`desktop-design-implementation.md`](./desktop-design-implementation.md).

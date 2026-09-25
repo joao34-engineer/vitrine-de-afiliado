@@ -88,4 +88,15 @@ describe("department rail sheet", () => {
     renderNavigation();
     expect(screen.getByRole("link", { name: "Home" }).getAttribute("href")).toBe("/");
   });
+
+  it("marks only the selected department as active", () => {
+    renderNavigation();
+    const home = screen.getByRole("link", { name: "Home" });
+    const homens = screen.getByRole("button", { name: "Homens" });
+
+    expect(home.className).toContain("is-active");
+    expect(homens.className).not.toContain("is-active");
+    expect(home.querySelector(".department-trigger-underline")).toBeTruthy();
+    expect(homens.querySelector(".department-trigger-underline")).toBeTruthy();
+  });
 });

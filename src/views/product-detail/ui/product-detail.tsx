@@ -35,8 +35,9 @@ export function ProductDetail({ product, relatedProducts = [] }: Readonly<{
           </div>
           <Link href={`/r/${product.id}`} className="detail-cta">
             <span className="detail-cta-mobile">Ver oferta</span>
-            <span className="detail-cta-desktop">Ver oferta na {getMarketplaceLabel(product.marketplace)}</span>
+            <span className="detail-cta-desktop">Ver oferta</span>
           </Link>
+          <p className="detail-affiliate-note">A compra acontece no marketplace parceiro. Precos e estoque podem mudar.</p>
         </div>
       </div>
       {relatedProducts.length > 0 ? (

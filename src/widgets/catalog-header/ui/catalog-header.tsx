@@ -12,7 +12,7 @@ export function CatalogHeader({ mobileSearch = "header", mobileRail = "header" }
     <header className="site-header" data-sheet-background>
       <div className="header-inner">
         <Link className="brand-lockup" href="/" aria-label="Salvat Ofertas, inicio">
-          <span className="brand-mark"><Image src="/brand/salvat-brand-seal.png" alt="" width={38} height={38} priority /></span>
+          <span className="brand-mark"><Image src="/brand/salvat-brand-seal.png" alt="" width={48} height={48} priority /></span>
           <span>
             <span className="brand-name">salvat&amp;brand</span>
             <span className="brand-subtitle">achados selecionados</span>
@@ -20,6 +20,7 @@ export function CatalogHeader({ mobileSearch = "header", mobileRail = "header" }
         </Link>
         <form className={`search-form header-search-form ${mobileSearch !== "header" ? "mobile-search-hidden" : ""}`.trim()} action="/buscar" method="get" role="search">
           <label className="sr-only" htmlFor="catalog-search">Buscar produtos</label>
+          <span aria-hidden="true" className="search-leading-icon">⌕</span>
           <input
             id="catalog-search"
             name="q"

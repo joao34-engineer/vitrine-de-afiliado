@@ -27,6 +27,7 @@ Entrada obrigatoria para LLMs e humanos antes de trabalhar no `affiliate-vitrine
 | Categorias, departamentos e folhas | `taxonomy-guidelines.md` |
 | Dept rail e hairline animada | `dept-rail-hairline-motion.md` |
 | Design mobile do Figma | `mobile-design-implementation.md` |
+| Design desktop do Figma | `desktop-design-implementation.md` |
 | Migracao automatica do catalogo legado | `catalog-migration-map.md` |
 | Backfill local e classificacao revisavel | `backfill-classification-runbook.md` |
 | Ingestao administrativa e console de review | `execution-doc/affiliate-vitrine-3-fases.md` + `supabase-runtime-runbook.md` |
