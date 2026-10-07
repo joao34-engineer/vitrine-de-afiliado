@@ -10,6 +10,7 @@ function HomeOffers({
   nextHref,
   nextLabel,
   previousHref,
+  itemOffset,
 }: Readonly<{
   className: string;
   headingId?: string;
@@ -17,6 +18,7 @@ function HomeOffers({
   nextHref: string | null;
   nextLabel?: string;
   previousHref?: string | null;
+  itemOffset: number;
 }>): React.JSX.Element {
   return (
     <section className={`catalog-section home-offers ${className}`.trim()} id={headingId}>
@@ -26,7 +28,7 @@ function HomeOffers({
           <p className="catalog-description">Produtos que merecem entrar na sua lista hoje.</p>
         </div>
       </div>
-      <CatalogProductGrid products={products} nextHref={nextHref} nextLabel={nextLabel} previousHref={previousHref} />
+      <CatalogProductGrid products={products} nextHref={nextHref} nextLabel={nextLabel} previousHref={previousHref} itemOffset={itemOffset} />
     </section>
   );
 }
@@ -83,6 +85,7 @@ export function CatalogHome({
         nextHref={nextHref}
         nextLabel={nextLabel}
         previousHref={previousHref}
+        itemOffset={hasDesktopHero ? 3 : 0}
       />
       <HomeOffers
         className="home-offers-mobile"
@@ -90,6 +93,7 @@ export function CatalogHome({
         nextHref={nextHref}
         nextLabel={nextLabel}
         previousHref={previousHref}
+        itemOffset={hasCuratedHero ? 2 : 0}
       />
     </>
   );

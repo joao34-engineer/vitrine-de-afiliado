@@ -8,6 +8,8 @@ describe("affiliate destination allowlist", () => {
     expect(isAllowedAffiliateDestination("https://shopee.com/oferta/123", "shopee")).toBe(true);
     expect(isAllowedAffiliateDestination("https://shp.ee/oferta/123", "shopee")).toBe(true);
     expect(isAllowedAffiliateDestination("https://br.shp.ee/oferta/123", "shopee")).toBe(true);
+    expect(isAllowedAffiliateDestination("https://shope.ee/oferta/123", "shopee")).toBe(true);
+    expect(isAllowedAffiliateDestination("https://shopee.ee/oferta/123", "shopee")).toBe(false);
     expect(isAllowedAffiliateDestination("http://shopee.com.br/product/123", "shopee")).toBe(false);
     expect(isAllowedAffiliateDestination("https://evil.example/product/123", "shopee")).toBe(false);
     expect(isAllowedAffiliateDestination("https://shopee.com.br:443/product/123", "shopee")).toBe(false);

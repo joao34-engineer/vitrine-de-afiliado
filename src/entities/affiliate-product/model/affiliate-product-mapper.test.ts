@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   deriveAffiliateProductSlug,
+  mapSupabasePublicAffiliateProductDetailRow,
+  mapSupabasePublicProductRowToCard,
   mapSupabaseProductRowToPublishableAffiliateProduct,
   mapSupabaseProductRowToPublicAffiliateProduct,
 } from "..";
@@ -98,6 +100,20 @@ describe("Supabase product mapper", () => {
     expect(
       mapSupabaseProductRowToPublicAffiliateProduct(
         row({ created_at: "not-a-date" }),
+      ),
+    ).toBeNull();
+  });
+
+  it("keeps a list card and a shope.ee detail, and rejects the shopee.ee typo", () => {
+    expect(mapSupabasePublicProductRowToCard(row())?.id).toBe("550e8400-e29b-41d4-a716-446655440000");
+    expect(
+      mapSupabasePublicAffiliateProductDetailRow(
+        row({ shopee_affiliate_link: "https://shope.ee/abc" }),
+      )?.affiliateUrl,
+    ).toBe("https://shope.ee/abc");
+    expect(
+      mapSupabasePublicAffiliateProductDetailRow(
+        row({ shopee_affiliate_link: "https://shopee.ee/abc" }),
       ),
     ).toBeNull();
   });

@@ -38,6 +38,20 @@ const conflictTargetMigration = readFileSync(
   ),
   "utf8",
 );
+const destinationFilterMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    "supabase/migrations/20261002000000_filter_public_catalog_by_affiliate_destination.sql",
+  ),
+  "utf8",
+);
+const unaccentMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    "supabase/migrations/20261002010000_unaccent_public_affiliate_search.sql",
+  ),
+  "utf8",
+);
 
 describe("public catalog migration contract", () => {
   it("keeps the migration non-destructive and bounded", () => {
@@ -133,5 +147,29 @@ describe("affiliate ingestion migration contract", () => {
     expect(conflictTargetMigration).not.toMatch(/on conflict\s*\(\s*product_id_shopee\s*\)/i);
     expect(conflictTargetMigration).not.toMatch(/drop\s+(function|table|column)/i);
     expect(conflictTargetMigration).toMatch(/grant execute on function public\.upsert_affiliate_product_ingestion[\s\S]*to service_role/i);
+  });
+});
+
+describe("public destination and unaccent migrations", () => {
+  it("uses shope.ee on list, search and detail without dropping tables", () => {
+    expect(destinationFilterMigration).toMatch(/begin;/i);
+    expect(destinationFilterMigration).toMatch(/commit;/i);
+    expect(destinationFilterMigration).not.toMatch(/drop\s+(function|table|column)/i);
+    expect(destinationFilterMigration).toMatch(/shope\[\.\]ee/i);
+    expect(destinationFilterMigration).not.toMatch(/shopee\[\.\]ee/i);
+    expect(destinationFilterMigration.match(/pg_catalog\.lower\(products\.shopee_affiliate_link\)/g)).toHaveLength(3);
+  });
+
+  it("folds accents on the stored document and on p_query", () => {
+    expect(unaccentMigration).toMatch(/create extension if not exists unaccent with schema extensions/i);
+    expect(unaccentMigration).toMatch(/public\.immutable_unaccent/i);
+    expect(unaccentMigration).toMatch(/to_tsvector\('portuguese', public\.immutable_unaccent/i);
+    expect(unaccentMigration).toMatch(/websearch_to_tsquery\('portuguese', public\.immutable_unaccent\(trim\(p_query\)\)\)/i);
+    expect(unaccentMigration).toMatch(/p_query text/i);
+    expect(unaccentMigration).toMatch(/p_cursor_rank real/i);
+    expect(unaccentMigration).toMatch(/drop column search_document/i);
+    expect(unaccentMigration).not.toMatch(/drop\s+table/i);
+    expect(unaccentMigration).not.toMatch(/shopee\[\.\]ee/i);
+    expect(unaccentMigration).toMatch(/shope\[\.\]ee/i);
   });
 });

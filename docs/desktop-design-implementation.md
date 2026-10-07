@@ -22,7 +22,7 @@ ignorados porque estao quebrados. O mobile permanece congelado em
 | --- | --- |
 | Chrome, logo 48px e busca 360 | `widgets/catalog-header` |
 | Rail e underline fixo do ativo | `features/department-navigation/ui/department-rail.tsx` |
-| Mega menu overlay | `features/department-navigation/ui/department-sheet.tsx` |
+| Painel de folhas do dept | `features/department-navigation/ui/department-sheet.tsx` |
 | Hero editorial + 3 cards | `views/catalog-home` |
 | Sidebar de folhas + busca | `views/catalog-listing` |
 | Gallery + buy panel | `views/product-detail` |
@@ -53,8 +53,8 @@ ao lado da busca, mesmo sem aparecer no Figma.
 - Listing nao implementa sort (`Menor preco` / `Mais recentes`). O chip mostra
   a folha ou o departamento atual.
 - PDP nao inventa description. Related busca 5 itens; o mobile continua com 2.
-- Mega menu reusa o controller do sheet (Escape, foco, sem fetch). Bottom sheet
-  mobile nao muda.
+- Clique no rail abre o sheet so com as folhas daquele departamento (Escape,
+  foco, sem fetch). Bottom sheet mobile nao muda.
 - Entre 641px e 1440 o layout e fluido (5→4→3 colunas). Nao ha frame tablet.
 
 ## Validacao

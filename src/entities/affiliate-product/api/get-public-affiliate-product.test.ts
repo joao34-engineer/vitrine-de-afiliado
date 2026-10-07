@@ -54,6 +54,11 @@ describe("public affiliate product detail", () => {
     const result = await getPublicAffiliateProductById(productId);
     expect(rpc).toHaveBeenCalledWith("get_public_affiliate_product", { p_product_id: productId });
     expect(result?.affiliateUrl).toBe("https://shopee.com.br/product/123");
+
+    setRpc([row({ shopee_affiliate_link: "https://shope.ee/abc" })]);
+    await expect(getPublicAffiliateProductById(productId)).resolves.toMatchObject({
+      affiliateUrl: "https://shope.ee/abc",
+    });
     expect(result).not.toHaveProperty("classificationReviewStatus");
     expect(result).not.toHaveProperty("classificationConfidence");
   });

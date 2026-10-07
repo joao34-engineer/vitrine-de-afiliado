@@ -9,8 +9,8 @@ export function CatalogHeader({ mobileSearch = "header", mobileRail = "header" }
   mobileRail?: "header" | "listing" | "hidden";
 }>): React.JSX.Element {
   return (
-    <header className="site-header" data-sheet-background>
-      <div className="header-inner">
+    <header className="site-header">
+      <div className="header-inner" data-sheet-background>
         <Link className="brand-lockup" href="/" aria-label="Salvat Ofertas, inicio">
           <span className="brand-mark"><Image src="/brand/salvat-brand-seal.png" alt="" width={48} height={48} priority /></span>
           <span>
@@ -20,7 +20,7 @@ export function CatalogHeader({ mobileSearch = "header", mobileRail = "header" }
         </Link>
         <form className={`search-form header-search-form ${mobileSearch !== "header" ? "mobile-search-hidden" : ""}`.trim()} action="/buscar" method="get" role="search">
           <label className="sr-only" htmlFor="catalog-search">Buscar produtos</label>
-          <span aria-hidden="true" className="search-leading-icon">⌕</span>
+          <button type="submit" className="search-leading-icon" aria-label="Buscar produtos">⌕</button>
           <input
             id="catalog-search"
             name="q"
@@ -28,9 +28,6 @@ export function CatalogHeader({ mobileSearch = "header", mobileRail = "header" }
             placeholder="Buscar achadinhos"
             autoComplete="off"
           />
-          <button type="submit" aria-label="Buscar produtos" className="search-submit">
-            Buscar
-          </button>
         </form>
         <div className="header-actions">
           <ThemeToggle />
@@ -38,9 +35,9 @@ export function CatalogHeader({ mobileSearch = "header", mobileRail = "header" }
         </div>
       </div>
       {mobileSearch === "header" ? (
-        <form className="mobile-header-search-form" action="/buscar" method="get" role="search">
+        <form className="mobile-header-search-form" action="/buscar" method="get" role="search" data-sheet-background>
           <label className="sr-only" htmlFor="mobile-catalog-search">Buscar produtos</label>
-          <span aria-hidden="true" className="search-leading-icon">⌕</span>
+          <button type="submit" className="search-leading-icon" aria-label="Buscar produtos">⌕</button>
           <input
             id="mobile-catalog-search"
             name="q"
@@ -48,9 +45,6 @@ export function CatalogHeader({ mobileSearch = "header", mobileRail = "header" }
             placeholder="Buscar achadinhos"
             autoComplete="off"
           />
-          <button type="submit" aria-label="Buscar produtos" className="search-submit">
-            Buscar
-          </button>
         </form>
       ) : null}
       <DepartmentRail className={`header-department-rail mobile-rail-${mobileRail}`.trim()} />

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -149,92 +148,6 @@ function useDesktopNavigationChrome(): boolean {
   return isDesktop;
 }
 
-function MegaMenuSheet({
-  panel,
-  onClose,
-  openDepartment,
-  scrollRegionRef,
-}: Readonly<{
-  panel: Exclude<DepartmentNavigationPanel, null>;
-  onClose: () => void;
-  openDepartment: (departmentSlug: DepartmentSlug) => void;
-  scrollRegionRef: React.RefObject<HTMLElement | null>;
-}>): React.JSX.Element {
-  const [query, setQuery] = useState("");
-  const activeDepartmentSlug = panel.type === "department" ? panel.departmentSlug : null;
-  const activeDepartment = activeDepartmentSlug ? findDepartmentBySlug(activeDepartmentSlug) : null;
-  const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
-
-  const departments = useMemo(() => {
-    const items = listDepartments().filter((department) => department.slug !== "home");
-    if (normalizedQuery.length === 0) return items;
-    return items.filter((department) => department.label.toLocaleLowerCase("pt-BR").includes(normalizedQuery));
-  }, [normalizedQuery]);
-
-  const leaves = useMemo(() => {
-    if (activeDepartmentSlug === null) return [];
-    const items = listLeaves().filter((leaf) => leaf.departmentSlug === activeDepartmentSlug);
-    if (normalizedQuery.length === 0) return items;
-    return items.filter((leaf) => leaf.label.toLocaleLowerCase("pt-BR").includes(normalizedQuery));
-  }, [activeDepartmentSlug, normalizedQuery]);
-
-  return (
-    <div className="sheet-mega-menu">
-      <div className="sheet-mega-overview">
-        <div className="brand-lockup">
-          <span className="brand-mark">
-            <Image src="/brand/salvat-brand-seal.png" alt="" width={48} height={48} />
-          </span>
-          <span>
-            <span className="brand-name">salvat&amp;brand</span>
-            <span className="brand-subtitle">achados selecionados</span>
-          </span>
-        </div>
-        <p className="sheet-mega-copy">Use o menu para abrir um departamento ou ir direto para uma folha.</p>
-        <Link href="/" className="sheet-mega-cta" onClick={onClose}>Ver ofertas</Link>
-        <SheetSearch
-          label="Buscar departamento ou folha"
-          placeholder="Buscar departamento ou folha"
-          query={query}
-          onQueryChange={setQuery}
-        />
-      </div>
-      <div className="sheet-mega-column">
-        <h2 id="department-sheet-title">Departamentos</h2>
-        <nav className="sheet-scroll-region" aria-label="Departamentos">
-          <SheetRow href="/" label="Home" onClose={onClose} />
-          {departments.map((department) => (
-            <button
-              key={department.slug}
-              type="button"
-              className={`sheet-leaf ${activeDepartmentSlug === department.slug ? "is-active" : ""}`.trim()}
-              onClick={() => openDepartment(department.slug)}
-            >
-              <span>{department.label}</span>
-              <span aria-hidden="true">›</span>
-            </button>
-          ))}
-          {departments.length === 0 ? <p className="sheet-empty">Nenhum departamento encontrado.</p> : null}
-        </nav>
-      </div>
-      <div className="sheet-mega-column">
-        <h3>{activeDepartment ? `Folhas de ${activeDepartment.label}` : "Folhas"}</h3>
-        <nav ref={scrollRegionRef} className="sheet-scroll-region" aria-label={activeDepartment ? `Folhas de ${activeDepartment.label}` : "Folhas"}>
-          {activeDepartmentSlug ? (
-            <>
-              <SheetRow href={`/departamento/${activeDepartmentSlug}`} label="Todos" onClose={onClose} />
-              {leaves.map((leaf) => <SheetRow key={leaf.slug} href={`/folha/${leaf.slug}`} label={leaf.label} onClose={onClose} />)}
-              {leaves.length === 0 ? <p className="sheet-empty">Nenhuma folha encontrada.</p> : null}
-            </>
-          ) : (
-            <p className="sheet-empty">Selecione um departamento.</p>
-          )}
-        </nav>
-      </div>
-    </div>
-  );
-}
-
 function AllDepartmentsSheet({ onClose, openDepartment, scrollRegionRef }: Readonly<{
   onClose: () => void;
   openDepartment: (departmentSlug: DepartmentSlug) => void;
@@ -347,27 +260,20 @@ function OpenDepartmentSheet({ panel, close, triggerRef }: Readonly<{
         tabIndex={-1}
         onClick={(event) => event.stopPropagation()}
       >
-        {isDesktop ? (
-          <MegaMenuSheet
-            panel={panel}
+        {isDesktop ? null : (
+          <>
+            <div className="sheet-handle" aria-hidden="true" />
+            <div className="sheet-brand-row" aria-hidden="true" />
+          </>
+        )}
+        {panel.type === "all" ? (
+          <AllDepartmentsSheet
             onClose={close}
             openDepartment={(departmentSlug) => openDepartment(departmentSlug, null)}
             scrollRegionRef={scrollRegionRef}
           />
         ) : (
-          <>
-            <div className="sheet-handle" aria-hidden="true" />
-            <div className="sheet-brand-row" aria-hidden="true" />
-            {panel.type === "all" ? (
-              <AllDepartmentsSheet
-                onClose={close}
-                openDepartment={(departmentSlug) => openDepartment(departmentSlug, null)}
-                scrollRegionRef={scrollRegionRef}
-              />
-            ) : (
-              <DepartmentLeavesSheet departmentSlug={panel.departmentSlug} onClose={close} scrollRegionRef={scrollRegionRef} />
-            )}
-          </>
+          <DepartmentLeavesSheet key={panel.departmentSlug} departmentSlug={panel.departmentSlug} onClose={close} scrollRegionRef={scrollRegionRef} />
         )}
       </aside>
     </div>

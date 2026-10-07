@@ -7,11 +7,13 @@ export function CatalogProductGrid({
   nextHref,
   nextLabel,
   previousHref,
+  itemOffset = 0,
 }: Readonly<{
   products: readonly PublicAffiliateProductCardData[];
   nextHref: string | null;
   nextLabel?: string;
   previousHref?: string | null;
+  itemOffset?: number;
 }>): React.JSX.Element {
   return (
     <LoadMoreProducts
@@ -19,6 +21,7 @@ export function CatalogProductGrid({
       nextHref={nextHref}
       nextLabel={nextLabel}
       previousHref={previousHref}
+      itemOffset={itemOffset}
     />
   );
 }

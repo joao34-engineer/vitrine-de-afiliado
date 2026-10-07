@@ -32,6 +32,8 @@ describe("catalog listing desktop sidebar", () => {
     expect(screen.getByRole("link", { name: "Todos" }).getAttribute("href")).toBe("/departamento/casa");
     expect(screen.getByRole("link", { name: "Decoracao" }).getAttribute("href")).toBe("/folha/decoracao");
     expect(screen.getByRole("link", { name: "Organizacao" }).getAttribute("href")).toBe("/folha/organizacao");
+    expect(screen.getByRole("button", { name: "Buscar nesta folha" }).getAttribute("type")).toBe("submit");
+    expect(document.querySelector('input[name="departmentSlug"]')?.getAttribute("value")).toBe("casa");
   });
 
   it("marks the current leaf as the context chip", () => {

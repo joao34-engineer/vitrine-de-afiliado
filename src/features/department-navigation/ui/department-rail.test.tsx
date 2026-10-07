@@ -60,8 +60,8 @@ describe("department rail sheet", () => {
     expect(document.activeElement).toBe(screen.getByRole("dialog"));
     expect(document.querySelector("main")?.getAttribute("aria-hidden")).toBe("true");
     expect((document.querySelector("main") as HTMLElement).inert).toBe(true);
-    expect(document.querySelector(".department-rail-wrap")?.getAttribute("aria-hidden")).toBe("true");
-    expect((document.querySelector(".department-rail-wrap") as HTMLElement).inert).toBe(true);
+    expect(document.querySelector(".department-rail-wrap")?.getAttribute("aria-hidden")).toBeNull();
+    expect((document.querySelector(".department-rail-wrap") as HTMLElement).inert).not.toBe(true);
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -98,5 +98,33 @@ describe("department rail sheet", () => {
     expect(homens.className).not.toContain("is-active");
     expect(home.querySelector(".department-trigger-underline")).toBeTruthy();
     expect(homens.querySelector(".department-trigger-underline")).toBeTruthy();
+    expect(homens.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("moves the underline from Home to the open department", () => {
+    renderNavigation();
+    const home = screen.getByRole("link", { name: "Home" });
+    const homens = screen.getByRole("button", { name: "Homens" });
+
+    fireEvent.click(homens);
+
+    expect(home.className).not.toContain("is-active");
+    expect(homens.className).toContain("is-active");
+    expect(homens.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByRole("heading", { name: "Homens" })).toBeTruthy();
+  });
+
+  it("switches department on the first click while the sheet stays open", () => {
+    renderNavigation();
+
+    fireEvent.click(screen.getByRole("button", { name: "Homens" }));
+    fireEvent.click(screen.getByRole("button", { name: "Casa" }));
+
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Casa" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Homens" }).className).not.toContain("is-active");
+    expect(screen.getByRole("button", { name: "Casa" }).className).toContain("is-active");
+    expect(screen.getByRole("button", { name: "Casa" }).getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByRole("button", { name: "Homens" }).getAttribute("aria-expanded")).toBe("false");
   });
 });
