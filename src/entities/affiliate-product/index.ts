@@ -23,6 +23,7 @@ export {
   getAffiliateDiscountPercent,
   getMarketplaceLabel,
 } from "./model/affiliate-product-presentation";
+export { offerRedirectHref } from "./model/offer-redirect";
 export { isAllowedAffiliateDestination } from "./model/affiliate-destination";
 export {
   isHttpsUrl,

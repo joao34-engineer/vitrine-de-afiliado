@@ -60,6 +60,7 @@ export default function Page() {
 
 ## Anti-padroes
 
+- Usar `next/link` em `/r/{id}`. Essa rota e um Route Handler de 302; o App Router faz client navigation/prefetch e o browser mostra `Failed to fetch`. Usar `<a href={offerRedirectHref(id)}>`.
 - Fetch client-side para catalogo inicial.
 - Widget inteiro com `'use client'` por causa de um botao interno.
 - `console.log` de debug no navegador em producao.

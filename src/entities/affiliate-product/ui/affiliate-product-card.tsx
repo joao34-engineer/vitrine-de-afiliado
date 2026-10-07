@@ -6,6 +6,7 @@ import {
   getAffiliateDiscountPercent,
   getMarketplaceLabel,
 } from "../model/affiliate-product-presentation";
+import { offerRedirectHref } from "../model/offer-redirect";
 import type { PublicAffiliateProductCardData } from "../model/affiliate-product";
 import { getLeafBySlug } from "@/shared/config/affiliate-taxonomy";
 
@@ -35,7 +36,7 @@ export function AffiliateProductCard({ product, variant = "default" }: Readonly<
           <span className="product-taxonomy-inline">{leaf.label}</span>
         </div>
         <p className="product-taxonomy-label">{leaf.label}</p>
-        <Link href={`/r/${product.id}`} className="product-cta">Ver oferta</Link>
+        <a href={offerRedirectHref(product.id)} className="product-cta">Ver oferta</a>
       </div>
     </article>
   );

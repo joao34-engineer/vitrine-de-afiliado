@@ -6,6 +6,7 @@ import {
   formatAffiliatePrice,
   getAffiliateDiscountPercent,
   getMarketplaceLabel,
+  offerRedirectHref,
   type PublicAffiliateProduct,
   type PublicAffiliateProductCardData,
 } from "@/entities/affiliate-product";
@@ -33,10 +34,10 @@ export function ProductDetail({ product, relatedProducts = [] }: Readonly<{
             <strong>{price ?? "Confira preco e disponibilidade no marketplace"}</strong>
             {discount !== null ? <span className="discount-inline">-{discount}%</span> : null}
           </div>
-          <Link href={`/r/${product.id}`} className="detail-cta">
+          <a href={offerRedirectHref(product.id)} className="detail-cta">
             <span className="detail-cta-mobile">Ver oferta</span>
             <span className="detail-cta-desktop">Ver oferta</span>
-          </Link>
+          </a>
           <p className="detail-affiliate-note">A compra acontece no marketplace parceiro. Precos e estoque podem mudar.</p>
         </div>
       </div>
